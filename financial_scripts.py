@@ -1,9 +1,3 @@
-# ============================================================
-# FINSIGHT - FINANCIAL SCRIPT FUNCTIONS
-# ============================================================
-
-# Sample data for testing
-
 revenue_transactions = [
     {"amount": 8000},
     {"amount": 12500},
@@ -70,9 +64,7 @@ def calculate_fixed_variable_split(expense_breakdown):
     }
 
 
-# ============================================================
-# EXAMPLE USAGE
-# ============================================================
+
 
 total_revenue = calculate_total_revenue(revenue_transactions)
 
