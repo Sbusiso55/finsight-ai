@@ -1,4 +1,4 @@
-package finsight.controller;
+package com.finsight.controller;
 
 // Endpoints to add, edit, delete and list transactions
 
