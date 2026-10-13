@@ -1,4 +1,4 @@
-package finsight.controller;
+package com.finsight.controller;
 
 // Endpoints to create, list and switch between businesses
 
