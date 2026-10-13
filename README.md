@@ -16,10 +16,8 @@ Team
 - Aruk — Backend
 - Portia — Backend
 - Kayise — Backend
-- Chantel — Frontend
 - Lerato — Frontend
 - Lily — Frontend
 - Divine — Data and Finance
-- Anita — Planning and Documentation
 Setup
 Instructions coming soon.
