@@ -1,8 +1,10 @@
 
 import os
-from dotenv import load_dotenv
-from openai import OpenAI
 from unittest.mock import patch
+
+from dotenv import load_dotenv
+from google import genai
+from google.genai import types
 
 from financial_scripts import (
     calculate_total_revenue,
@@ -23,7 +25,7 @@ def build_financial_summary(
     total_fixed_expenses,
     total_variable_expenses,
 ):
-    """Build financial data using the existing calculation functions."""
+    """Build a financial summary using existing calculation functions."""
 
     total_revenue = calculate_total_revenue(revenue_transactions)
     total_expenses = calculate_total_expenses(expense_breakdown)
@@ -48,13 +50,13 @@ def build_financial_summary(
 
 
 def ask_financial_question(question, financial_data):
-    """Answer a financial question using supplied financial data."""
+    """Answer a financial question using Gemini."""
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GEMINI_API_KEY")
 
     if not api_key:
         raise ValueError(
-            "OPENAI_API_KEY is not set. Configure your API key first."
+            "GEMINI_API_KEY is not set. Configure your API key first."
         )
 
     if not isinstance(question, str) or not question.strip():
@@ -63,24 +65,29 @@ def ask_financial_question(question, financial_data):
     if not isinstance(financial_data, dict):
         raise ValueError("Financial data must be provided as a dictionary.")
 
-    client = OpenAI(api_key=api_key)
+    client = genai.Client(api_key=api_key)
 
-    response = client.responses.create(
-        model="gpt-4.1-mini",
-        instructions=(
-            "You are FinSight, a financial intelligence assistant. "
-            "Answer questions conversationally and clearly. "
-            "Use the supplied financial data for specific figures. "
-            "Do not invent missing figures or present estimates as facts. "
-            "Explain relevant trends, risks, and practical suggestions."
+    response = client.models.generate_content(
+        model="gemini-3.5-flash-lite",
+        config=types.GenerateContentConfig(
+            system_instruction=(
+                "You are FinSight, a financial intelligence assistant. "
+                "Answer questions conversationally and clearly. "
+                "Use the supplied financial data for specific figures. "
+                "Do not invent missing figures or present estimates as facts. "
+                "Explain relevant trends, risks, and practical suggestions."
+            )
         ),
-        input=(
+        contents=(
             f"Financial data:\n{financial_data}\n\n"
             f"User's question:\n{question}"
         ),
     )
 
-    return response.output_text
+    if not response.text:
+        raise RuntimeError("Gemini returned an empty response.")
+
+    return response.text
 
 
 if __name__ == "__main__":
@@ -107,10 +114,10 @@ if __name__ == "__main__":
         total_variable_expenses=9800,
     )
 
-    with patch("__main__.OpenAI") as mock_openai:
-        mock_client = mock_openai.return_value
-        mock_response = mock_client.responses.create.return_value
-        mock_response.output_text = (
+    with patch("__main__.genai.Client") as mock_client_factory:
+        mock_client = mock_client_factory.return_value
+        mock_response = mock_client.models.generate_content.return_value
+        mock_response.text = (
             "Your business generated R30,000 in revenue and "
             "R24,800 in expenses. Revenue grew by 20%."
         )
@@ -122,5 +129,6 @@ if __name__ == "__main__":
 
         print("Mock test response:")
         print(answer)
-        print("\nFinancial data sent to the assistant:")
+        print("Financial data sent to the assistant:")
+
         print(financial_data)
