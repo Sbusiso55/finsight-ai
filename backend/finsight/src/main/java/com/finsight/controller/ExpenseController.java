@@ -1,54 +1,38 @@
 package com.finsight.controller;
 
 import com.finsight.service.ExpenseService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.Map;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/expenses")
 public class ExpenseController {
 
-    @Autowired
-    private ExpenseService expenseService;
+    private final ExpenseService expenseService;
 
-    @PostMapping("/total")
-    public double getTotalExpenses(@RequestBody List<Double> expenses) {
-        return expenseService.calculateTotalExpenses(expenses);
+    public ExpenseController(ExpenseService expenseService) {
+        this.expenseService = expenseService;
     }
 
-    @GetMapping("/ratio")
-    public double getExpenseToRevenueRatio(
-            @RequestParam double totalExpenses,
-            @RequestParam double totalRevenue) {
-        return expenseService.calculateExpenseToRevenueRatio(totalExpenses, totalRevenue);
+    @GetMapping("/breakdown")
+    public ResponseEntity<Map<String, BigDecimal>> getExpenseBreakdown(
+            @RequestParam Map<String, BigDecimal> expenses) {
+        return ResponseEntity.ok(expenseService.calculateExpenseBreakdown(expenses));
     }
 
-    @GetMapping("/growth-rate")
-    public double getExpenseGrowthRate(
-            @RequestParam double currentMonth,
-            @RequestParam double previousMonth) {
-        return expenseService.calculateExpenseGrowthRate(currentMonth, previousMonth);
+    @GetMapping("/total")
+    public ResponseEntity<BigDecimal> getTotalExpenses(
+            @RequestParam Map<String, BigDecimal> expenses) {
+        return ResponseEntity.ok(expenseService.calculateTotalExpenses(expenses));
     }
 
-    @PostMapping("/category-breakdown")
-    public Map<String, Double> getCategoryBreakdown(
-            @RequestBody Map<String, Double> expensesByCategory) {
-        return expenseService.calculateCategoryPercentages(expensesByCategory);
-    }
-
-    @PostMapping("/largest-category")
-    public Map.Entry<String, Double> getLargestCategory(
-            @RequestBody Map<String, Double> expensesByCategory) {
-        return expenseService.findLargestExpenseCategory(expensesByCategory);
-    }
-
-    @GetMapping("/fixed-vs-variable")
-    public Map<String, Double> getFixedVsVariable(
-            @RequestParam double fixedCosts,
-            @RequestParam double variableCosts) {
-        return expenseService.calculateFixedVsVariable(fixedCosts, variableCosts);
+    @GetMapping("/fixed-variable-split")
+    public ResponseEntity<Map<String, BigDecimal>> getFixedVariableSplit(
+            @RequestParam BigDecimal fixedCosts,
+            @RequestParam BigDecimal variableCosts) {
+        return ResponseEntity.ok(expenseService.calculateFixedVariableSplit(fixedCosts, variableCosts));
     }
 }
