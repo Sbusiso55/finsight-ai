@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
-from financial_scripts import (
+from scripts.financial_scripts import (
     calculate_total_revenue,
     calculate_revenue_growth_rate,
     calculate_total_expenses,
