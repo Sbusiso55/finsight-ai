@@ -1,5 +1,6 @@
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from scripts.openai_integration import (
@@ -13,6 +14,30 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# Allow the React frontend to call the API during local development.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+    ],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+class RevenueTransaction(BaseModel):
+    amount: float = Field(..., ge=0)
+
+
+class FinancialSummaryRequest(BaseModel):
+    revenue_transactions: list[RevenueTransaction]
+    expense_breakdown: dict[str, float]
+    previous_revenue: float = Field(..., ge=0)
+    total_fixed_expenses: float = Field(..., ge=0)
+    total_variable_expenses: float = Field(..., ge=0)
+
 
 class FinancialQuestion(BaseModel):
     question: str = Field(..., min_length=1)
@@ -24,30 +49,18 @@ def health_check():
     return {"status": "FinSight API is running"}
 
 
-@app.get("/financial-summary")
-def get_financial_summary():
-    revenue_transactions = [
-        {"amount": 8000},
-        {"amount": 12500},
-        {"amount": 4500},
-        {"amount": 5000},
-    ]
-
-    expense_breakdown = {
-        "Salaries": 9000,
-        "Rent": 6000,
-        "Advertising": 2500,
-        "Utilities": 2300,
-        "Other business costs": 5000,
-    }
-
+@app.post("/financial-summary")
+def get_financial_summary(request: FinancialSummaryRequest):
     try:
         return build_financial_summary(
-            revenue_transactions=revenue_transactions,
-            expense_breakdown=expense_breakdown,
-            previous_revenue=25000,
-            total_fixed_expenses=15000,
-            total_variable_expenses=9800,
+            revenue_transactions=[
+                transaction.model_dump()
+                for transaction in request.revenue_transactions
+            ],
+            expense_breakdown=request.expense_breakdown,
+            previous_revenue=request.previous_revenue,
+            total_fixed_expenses=request.total_fixed_expenses,
+            total_variable_expenses=request.total_variable_expenses,
         )
     except Exception as exc:
         raise HTTPException(
