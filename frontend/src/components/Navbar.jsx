@@ -6,39 +6,34 @@ const Navbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        navigate('/login');
-    };
-
     const navItems = [
-        { path: '/dashboard', label: '📊 Overview' },
-        { path: '/transactions', label: '💳 Transactions' },
-        { path: '/reports', label: '📋 Reports' },
-        { path: '/ask-ai', label: '💬 Ask AI' },
-        { path: '/settings', label: '⚙️ Settings' }
+        { label: 'Dashboard', path: '/dashboard' },
+        { label: 'Transactions', path: '/transactions' },
+        { label: 'Reports', path: '/reports' },
+        { label: 'Ask AI', path: '/ask-ai' },
+        { label: 'Settings', path: '/settings' },
     ];
 
     return (
-        <aside className="sidebar">
-            <div className="sidebar-logo" onClick={() => navigate('/dashboard')}>
-                FinSight
+        <nav className="navbar">
+            <div className="navbar-logo" onClick={() => navigate('/dashboard')}>
+                Fin<span>Sight</span>
             </div>
-            <nav className="sidebar-nav">
+            <div className="navbar-links">
                 {navItems.map((item) => (
                     <button
                         key={item.path}
-                        className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
+                        className={`navbar-link ${location.pathname === item.path ? 'active' : ''}`}
                         onClick={() => navigate(item.path)}
                     >
                         {item.label}
                     </button>
                 ))}
-            </nav>
-            <button className="logout-btn" onClick={handleLogout}>
-                Logout
+            </div>
+            <button className="navbar-logout" onClick={() => navigate('/login')}>
+                Log Out
             </button>
-        </aside>
+        </nav>
     );
 };
 

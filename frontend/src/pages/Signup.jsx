@@ -1,104 +1,58 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import './Auth.css';
 
 const Signup = () => {
+    const navigate = useNavigate();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
 
-    const handleSubmit = async (e) => {
+    const handleSignup = (e) => {
         e.preventDefault();
-        setError('');
-
-        if (password !== confirmPassword) {
-            setError('Passwords do not match');
-            return;
-        }
-
-        setLoading(true);
-
-        try {
-            const response = await fetch('/api/auth/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, password })
-            });
-
-            if (!response.ok) {
-                throw new Error('Registration failed. Please try again.');
-            }
-
-            window.location.href = '/login';
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
+        navigate('/dashboard');
     };
 
     return (
-        <div className="auth-container">
-            <div className="auth-card">
-                <h1>FinSight</h1>
-                <h2>Create Account</h2>
-                <p className="auth-subtitle">Start managing your finances with AI</p>
-
-                {error && <div className="auth-error">{error}</div>}
-
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group">
+        <div className="auth-wrapper">
+            <div className="auth-glow"></div>
+            <div className="auth-container">
+                <h1 className="auth-logo">Fin<span>Sight</span></h1>
+                <p className="auth-subtitle">Create your account. It takes 30 seconds.</p>
+                <form className="auth-form" onSubmit={handleSignup}>
+                    <div className="auth-field">
                         <label>Full Name</label>
                         <input
                             type="text"
+                            placeholder="Enter your full name"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder="Enter your full name"
                             required
                         />
                     </div>
-
-                    <div className="form-group">
+                    <div className="auth-field">
                         <label>Email</label>
                         <input
                             type="email"
+                            placeholder="Enter your email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            placeholder="Enter your email"
                             required
                         />
                     </div>
-
-                    <div className="form-group">
+                    <div className="auth-field">
                         <label>Password</label>
                         <input
                             type="password"
+                            placeholder="Create a password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            placeholder="Create a password"
                             required
                         />
                     </div>
-
-                    <div className="form-group">
-                        <label>Confirm Password</label>
-                        <input
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            placeholder="Confirm your password"
-                            required
-                        />
-                    </div>
-
-                    <button type="submit" className="auth-button" disabled={loading}>
-                        {loading ? 'Creating Account...' : 'Sign Up'}
-                    </button>
+                    <button type="submit" className="auth-submit">Create Account</button>
                 </form>
-
-                <p className="auth-link">
+                <p className="auth-switch">
                     Already have an account? <Link to="/login">Sign In</Link>
                 </p>
             </div>
