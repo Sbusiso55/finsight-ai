@@ -1,76 +1,47 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import './Auth.css';
 
 const Login = () => {
+    const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
 
-    const handleSubmit = async (e) => {
+    const handleLogin = (e) => {
         e.preventDefault();
-        setError('');
-        setLoading(true);
-
-        try {
-            const response = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
-
-            if (!response.ok) {
-                throw new Error('Invalid email or password');
-            }
-
-            const data = await response.json();
-            localStorage.setItem('token', data.token);
-            window.location.href = '/dashboard';
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
+        navigate('/dashboard');
     };
 
     return (
-        <div className="auth-container">
-            <div className="auth-card">
-                <h1>FinSight</h1>
-                <h2>Welcome Back</h2>
-                <p className="auth-subtitle">Sign in to your account</p>
-
-                {error && <div className="auth-error">{error}</div>}
-
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group">
+        <div className="auth-wrapper">
+            <div className="auth-glow"></div>
+            <div className="auth-container">
+                <h1 className="auth-logo">Fin<span>Sight</span></h1>
+                <p className="auth-subtitle">Welcome back. Sign in to continue.</p>
+                <form className="auth-form" onSubmit={handleLogin}>
+                    <div className="auth-field">
                         <label>Email</label>
                         <input
                             type="email"
+                            placeholder="Enter your email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            placeholder="Enter your email"
                             required
                         />
                     </div>
-
-                    <div className="form-group">
+                    <div className="auth-field">
                         <label>Password</label>
                         <input
                             type="password"
+                            placeholder="Enter your password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            placeholder="Enter your password"
                             required
                         />
                     </div>
-
-                    <button type="submit" className="auth-button" disabled={loading}>
-                        {loading ? 'Signing in...' : 'Sign In'}
-                    </button>
+                    <button type="submit" className="auth-submit">Sign In</button>
                 </form>
-
-                <p className="auth-link">
+                <p className="auth-switch">
                     Don't have an account? <Link to="/signup">Sign Up</Link>
                 </p>
             </div>

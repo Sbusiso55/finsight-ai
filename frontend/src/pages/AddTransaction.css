@@ -1,119 +1,116 @@
-.form-container {
-    max-width: 600px;
-    background: #141c2e;
-    border: 1px solid #1e2d45;
-    border-radius: 14px;
-    padding: 32px;
+.add-trans-wrapper {
+    min-height: 100vh;
+    background: #111111;
 }
 
-.form-container form {
+.add-trans-content {
+    padding: 32px 48px;
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+.add-trans-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #f5f0eb;
+    letter-spacing: -1px;
+    margin-bottom: 6px;
+}
+
+.add-trans-subtitle {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: #6b6560;
+    margin-bottom: 36px;
+}
+
+.add-trans-form {
     display: flex;
     flex-direction: column;
+    gap: 24px;
+    padding: 36px;
+    background: rgba(26, 23, 20, 0.6);
+    border: 1px solid rgba(201, 169, 110, 0.06);
+    border-radius: 14px;
+}
+
+.add-trans-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 20px;
 }
 
-.form-error {
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    color: #ef4444;
-    padding: 12px 16px;
-    border-radius: 10px;
-    font-size: 14px;
-}
-
-.form-group {
+.add-trans-field {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    flex: 1;
+    gap: 6px;
 }
 
-.form-group label {
+.add-trans-field label {
+    font-family: 'DM Sans', sans-serif;
     font-size: 13px;
     font-weight: 600;
-    color: #94a3b8;
+    color: #8a8078;
+    letter-spacing: 0.5px;
 }
 
-.form-group input,
-.form-group select {
-    background: #0f1729;
-    border: 1px solid #1e2d45;
-    border-radius: 10px;
+.add-trans-field input,
+.add-trans-field select {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
     padding: 12px 16px;
-    color: #e2e8f0;
-    font-size: 14px;
-    font-family: 'Inter', sans-serif;
-    outline: none;
-    transition: border-color 0.2s;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-    border-color: #3b82f6;
-}
-
-.form-group input::placeholder {
-    color: #4a5568;
-}
-
-.form-group select {
-    cursor: pointer;
-    appearance: none;
-}
-
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-}
-
-.submit-btn {
-    background: #2563eb;
-    color: #fff;
-    border: none;
-    padding: 14px;
+    background: rgba(17, 17, 17, 0.6);
+    border: 1px solid #2a2520;
     border-radius: 10px;
+    color: #f5f0eb;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+.add-trans-field input:focus,
+.add-trans-field select:focus {
+    border-color: #c9a96e;
+}
+
+.add-trans-field select {
+    cursor: pointer;
+}
+
+.add-trans-field select option {
+    background: #1a1714;
+    color: #f5f0eb;
+}
+
+.add-trans-submit {
+    font-family: 'DM Sans', sans-serif;
     font-size: 15px;
     font-weight: 600;
+    padding: 14px;
+    background: linear-gradient(135deg, #c9a96e, #b8944a);
+    border: none;
+    border-radius: 10px;
+    color: #111111;
     cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    transition: background 0.2s;
+    transition: all 0.3s ease;
     margin-top: 8px;
 }
 
-.submit-btn:hover {
-    background: #1d4ed8;
-}
-
-.submit-btn:disabled {
-    background: #1e2d45;
-    cursor: not-allowed;
-}
-
-.secondary-btn {
-    background: transparent;
-    border: 1px solid #1e2d45;
-    color: #7a8ba8;
-    padding: 10px 20px;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    transition: all 0.2s;
-}
-
-.secondary-btn:hover {
-    border-color: #3b82f6;
-    color: #e2e8f0;
+.add-trans-submit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(201, 169, 110, 0.2);
 }
 
 @media (max-width: 768px) {
-    .form-row {
+    .add-trans-content {
+        padding: 20px;
+    }
+
+    .add-trans-row {
         grid-template-columns: 1fr;
     }
 
-    .form-container {
-        padding: 20px;
+    .add-trans-form {
+        padding: 24px;
     }
 }

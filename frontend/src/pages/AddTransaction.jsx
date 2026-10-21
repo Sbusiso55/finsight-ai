@@ -5,141 +5,54 @@ import './AddTransaction.css';
 
 const AddTransaction = () => {
     const navigate = useNavigate();
-    const token = localStorage.getItem('token');
-    const [formData, setFormData] = useState({
-        description: '',
-        amount: '',
-        type: 'EXPENSE',
-        category: '',
-        date: ''
-    });
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+    const [description, setDescription] = useState('');
+    const [amount, setAmount] = useState('');
+    const [type, setType] = useState('Income');
+    const [category, setCategory] = useState('');
+    const [date, setDate] = useState('');
 
-    const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
-
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
-        setLoading(true);
-        setError('');
-
-        if (!formData.description || !formData.amount || !formData.date) {
-            setError('Please fill in all required fields.');
-            setLoading(false);
-            return;
-        }
-
-        try {
-            const response = await fetch('/api/transactions', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    ...formData,
-                    amount: parseFloat(formData.amount)
-                })
-            });
-
-            if (response.ok) {
-                navigate('/transactions');
-            } else {
-                setError('Failed to add transaction. Please try again.');
-            }
-        } catch (err) {
-            setError('Something went wrong. Please try again.');
-        } finally {
-            setLoading(false);
-        }
+        navigate('/transactions');
     };
-
-    const categories = [
-        'Salaries', 'Rent', 'Utilities', 'Marketing',
-        'Supplies', 'Transport', 'Insurance', 'Sales',
-        'Services', 'Consulting', 'Other'
-    ];
 
     return (
-        <div className="page-container">
+        <div className="add-trans-wrapper">
             <Navbar />
-            <main className="page-main">
-                <div className="page-header">
-                    <div>
-                        <h1>Add Transaction</h1>
-                        <p>Record a new income or expense transaction.</p>
+            <div className="add-trans-content">
+                <h1 className="add-trans-title">Add Transaction</h1>
+                <p className="add-trans-subtitle">Record a new income or expense.</p>
+                <form className="add-trans-form" onSubmit={handleSubmit}>
+                    <div className="add-trans-field">
+                        <label>Description</label>
+                        <input type="text" placeholder="What was this for?" value={description} onChange={(e) => setDescription(e.target.value)} required />
                     </div>
-                    <button className="secondary-btn" onClick={() => navigate('/transactions')}>
-                        Back to Transactions
-                    </button>
-                </div>
-
-                <div className="form-container">
-                    <form onSubmit={handleSubmit}>
-                        {error && <div className="form-error">{error}</div>}
-
-                        <div className="form-group">
-                            <label>Description *</label>
-                            <input
-                                type="text"
-                                name="description"
-                                value={formData.description}
-                                onChange={handleChange}
-                                placeholder="What was this transaction for?"
-                            />
+                    <div className="add-trans-row">
+                        <div className="add-trans-field">
+                            <label>Amount (R)</label>
+                            <input type="number" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} required />
                         </div>
-
-                        <div className="form-row">
-                            <div className="form-group">
-                                <label>Amount (R) *</label>
-                                <input
-                                    type="number"
-                                    name="amount"
-                                    value={formData.amount}
-                                    onChange={handleChange}
-                                    placeholder="0.00"
-                                    step="0.01"
-                                    min="0"
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label>Type</label>
-                                <select name="type" value={formData.type} onChange={handleChange}>
-                                    <option value="EXPENSE">Expense</option>
-                                    <option value="INCOME">Income</option>
-                                </select>
-                            </div>
+                        <div className="add-trans-field">
+                            <label>Type</label>
+                            <select value={type} onChange={(e) => setType(e.target.value)}>
+                                <option value="Income">Income</option>
+                                <option value="Expense">Expense</option>
+                            </select>
                         </div>
-
-                        <div className="form-row">
-                            <div className="form-group">
-                                <label>Category</label>
-                                <select name="category" value={formData.category} onChange={handleChange}>
-                                    <option value="">Select a category</option>
-                                    {categories.map((cat) => (
-                                        <option key={cat} value={cat}>{cat}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="form-group">
-                                <label>Date *</label>
-                                <input
-                                    type="date"
-                                    name="date"
-                                    value={formData.date}
-                                    onChange={handleChange}
-                                />
-                            </div>
+                    </div>
+                    <div className="add-trans-row">
+                        <div className="add-trans-field">
+                            <label>Category</label>
+                            <input type="text" placeholder="e.g. Rent, Wages, Sales" value={category} onChange={(e) => setCategory(e.target.value)} required />
                         </div>
-
-                        <button type="submit" className="submit-btn" disabled={loading}>
-                            {loading ? 'Adding...' : 'Add Transaction'}
-                        </button>
-                    </form>
-                </div>
-            </main>
+                        <div className="add-trans-field">
+                            <label>Date</label>
+                            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+                        </div>
+                    </div>
+                    <button type="submit" className="add-trans-submit">Save Transaction</button>
+                </form>
+            </div>
         </div>
     );
 };
