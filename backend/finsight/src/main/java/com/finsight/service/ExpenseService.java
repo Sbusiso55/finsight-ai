@@ -3,58 +3,79 @@ package com.finsight.service;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.List;
 
 @Service
 public class ExpenseService {
 
-    public BigDecimal calculateTotalExpenses(List<BigDecimal> expenses) {
-        return expenses.stream()
+    public BigDecimal calculateTotalExpenses(Map<String, BigDecimal> expenses) {
+        return expenses.values().stream()
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    public BigDecimal calculateExpenseToRevenueRatio(BigDecimal totalExpenses, BigDecimal totalRevenue) {
-        if (totalRevenue.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO;
-        return totalExpenses.divide(totalRevenue, 4, RoundingMode.HALF_UP)
-                .multiply(new BigDecimal("100"));
+    public Map<String, BigDecimal> calculateExpenseBreakdown(Map<String, BigDecimal> expenses) {
+        BigDecimal total = calculateTotalExpenses(expenses);
+        Map<String, BigDecimal> breakdown = new HashMap<>();
+        expenses.forEach((category, amount) -> {
+            BigDecimal percentage = total.compareTo(BigDecimal.ZERO) == 0
+                    ? BigDecimal.ZERO
+                    : amount.divide(total, 4, RoundingMode.HALF_UP)
+                            .multiply(new BigDecimal("100"));
+            breakdown.put(category, percentage);
+        });
+        return breakdown;
     }
 
-    public BigDecimal calculateExpenseGrowthRate(BigDecimal currentMonth, BigDecimal previousMonth) {
-        if (previousMonth.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO;
-        return currentMonth.subtract(previousMonth)
-                .divide(previousMonth, 4, RoundingMode.HALF_UP)
-                .multiply(new BigDecimal("100"));
+    public BigDecimal calculateFixedCosts(BigDecimal salaries, BigDecimal rent) {
+        return salaries.add(rent);
     }
 
-    public Map<String, BigDecimal> calculateFixedVsVariable(BigDecimal fixedCosts, BigDecimal variableCosts) {
-        BigDecimal total = fixedCosts.add(variableCosts);
-        return Map.of(
-            "fixedCosts", fixedCosts,
-            "variableCosts", variableCosts,
-            "fixedPercentage", fixedCosts.divide(total, 4, RoundingMode.HALF_UP).multiply(new BigDecimal("100")),
-            "variablePercentage", variableCosts.divide(total, 4, RoundingMode.HALF_UP).multiply(new BigDecimal("100"))
-        );
+    public BigDecimal calculateVariableCosts(BigDecimal totalExpenses, BigDecimal fixedCosts) {
+        return totalExpenses.subtract(fixedCosts);
     }
 
-    public Map.Entry<String, BigDecimal> findLargestExpenseCategory(Map<String, BigDecimal> expensesByCategory) {
-        return expensesByCategory.entrySet()
-                .stream()
-                .max(Map.Entry.comparingByValue())
-                .orElse(null);
+    public Map<String, BigDecimal> getExpenseSummary(Map<String, BigDecimal> expenses, BigDecimal salaries, BigDecimal rent) {
+        BigDecimal totalExpenses = calculateTotalExpenses(expenses);
+        BigDecimal fixedCosts = calculateFixedCosts(salaries, rent);
+        BigDecimal variableCosts = calculateVariableCosts(totalExpenses, fixedCosts);
+
+        BigDecimal fixedPercentage = totalExpenses.compareTo(BigDecimal.ZERO) == 0
+                ? BigDecimal.ZERO
+                : fixedCosts.divide(totalExpenses, 4, RoundingMode.HALF_UP)
+                        .multiply(new BigDecimal("100"));
+
+        BigDecimal variablePercentage = totalExpenses.compareTo(BigDecimal.ZERO) == 0
+                ? BigDecimal.ZERO
+                : variableCosts.divide(totalExpenses, 4, RoundingMode.HALF_UP)
+                        .multiply(new BigDecimal("100"));
+
+        Map<String, BigDecimal> summary = new HashMap<>();
+        summary.put("totalExpenses", totalExpenses);
+        summary.put("fixedCosts", fixedCosts);
+        summary.put("variableCosts", variableCosts);
+        summary.put("fixedPercentage", fixedPercentage);
+        summary.put("variablePercentage", variablePercentage);
+        return summary;
     }
 
-    public Map<String, BigDecimal> calculateCategoryPercentages(Map<String, BigDecimal> expensesByCategory) {
-        BigDecimal total = expensesByCategory.values()
-                .stream()
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    public Map<String, Object> getFullExpenseReport(Map<String, BigDecimal> expenses, BigDecimal salaries, BigDecimal rent) {
+        Map<String, Object> report = new HashMap<>();
+        report.put("breakdown", calculateExpenseBreakdown(expenses));
+        report.put("summary", getExpenseSummary(expenses, salaries, rent));
 
-        return expensesByCategory.entrySet()
-                .stream()
-                .collect(Collectors.toMap(
-                    Map.Entry::getKey,
-                    e -> e.getValue().divide(total, 4, RoundingMode.HALF_UP).multiply(new BigDecimal("100"))
-                ));
+        BigDecimal total = calculateTotalExpenses(expenses);
+        String largestCategory = "";
+        BigDecimal largestAmount = BigDecimal.ZERO;
+        for (Map.Entry<String, BigDecimal> entry : expenses.entrySet()) {
+            if (entry.getValue().compareTo(largestAmount) > 0) {
+                largestAmount = entry.getValue();
+                largestCategory = entry.getKey();
+            }
+        }
+        report.put("largestExpenseCategory", largestCategory);
+        report.put("largestExpenseAmount", largestAmount);
+        return report;
     }
 }
