@@ -14,10 +14,7 @@ Tech Stack
 Team
 - Kevin — Project Lead, Backend, AI Engine
 - Aruk — Backend
-- Portia — Backend
 - Kayise — Backend
-- Lerato — Frontend
-- Lily — Frontend
 - Divine — Data and Finance
 Setup
 Instructions coming soon.
