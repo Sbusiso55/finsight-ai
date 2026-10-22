@@ -1,3 +1,4 @@
+
 package com.finsight.controller;
 
 import com.finsight.model.Transaction;
@@ -5,6 +6,7 @@ import com.finsight.service.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,13 +21,15 @@ public class TransactionController {
     private TransactionService transactionService;
 
     @GetMapping
-    public ResponseEntity<Page<Transaction>> getAllTransactions(Pageable pageable) {
-        return ResponseEntity.ok(transactionService.findAll(pageable));
+    public ResponseEntity<Page<Transaction>> getTransactions(
+            @RequestParam Long businessId, Pageable pageable) {
+        return ResponseEntity.ok(transactionService.findByBusinessId(businessId, pageable));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Transaction> getTransactionById(@PathVariable Long id) {
-        return transactionService.findById(id)
+    public ResponseEntity<Transaction> getTransaction(
+            @PathVariable Long id, @RequestParam Long businessId) {
+        return transactionService.findByIdAndBusinessId(id, businessId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -36,10 +40,12 @@ public class TransactionController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Transaction> updateTransaction(@PathVariable Long id, @RequestBody Transaction transaction) {
-        return transactionService.findById(id)
+    public ResponseEntity<Transaction> updateTransaction(
+            @PathVariable Long id, @RequestParam Long businessId,
+            @RequestBody Transaction transaction) {
+        return transactionService.findByIdAndBusinessId(id, businessId)
                 .map(existing -> {
-                    transaction.setId(existing.getId());
+                    transaction.setId(id);
                     return ResponseEntity.ok(transactionService.save(transaction));
                 })
                 .orElse(ResponseEntity.notFound().build());
@@ -54,18 +60,17 @@ public class TransactionController {
     @GetMapping("/revenue")
     public ResponseEntity<BigDecimal> getTotalRevenue(
             @RequestParam Long businessId,
-            @RequestParam String startDate,
-            @RequestParam String endDate) {
-        return ResponseEntity.ok(transactionService.calculateTotalRevenue(
-                businessId, LocalDate.parse(startDate), LocalDate.parse(endDate)));
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return ResponseEntity.ok(transactionService.getTotalRevenue(businessId, from, to));
     }
 
     @GetMapping("/expenses")
     public ResponseEntity<BigDecimal> getTotalExpenses(
             @RequestParam Long businessId,
-            @RequestParam String startDate,
-            @RequestParam String endDate) {
-        return ResponseEntity.ok(transactionService.calculateTotalExpenses(
-                businessId, LocalDate.parse(startDate), LocalDate.parse(endDate)));
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return ResponseEntity.ok(transactionService.getTotalExpenses(businessId, from, to));
     }
 }
+
