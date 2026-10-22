@@ -1,3 +1,4 @@
+
 package com.finsight.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,27 +17,39 @@ public class MonthlySummaryService {
     private TransactionService transactionService;
 
     @Autowired
-    private ProfitMarginService profitMarginService;
+    private ExpenseService expenseService;
 
     @Autowired
-    private CashFlowService cashFlowService;
+    private ProfitMarginService profitMarginService;
 
-    public Map<String, Object> generateMonthlySummary(Long businessId, LocalDate startDate, LocalDate endDate, BigDecimal openingBalance) {
-        BigDecimal totalRevenue = transactionService.calculateTotalRevenue(businessId, startDate, endDate);
-        BigDecimal totalExpenses = transactionService.calculateTotalExpenses(businessId, startDate, endDate);
+    public Map<String, Object> generateMonthlySummary(Long businessId, LocalDate from, LocalDate to, BigDecimal openingBalance) {
+        BigDecimal totalRevenue = transactionService.getTotalRevenue(businessId, from, to);
+        BigDecimal totalExpenses = transactionService.getTotalExpenses(businessId, from, to);
         BigDecimal netProfit = totalRevenue.subtract(totalExpenses);
+        BigDecimal closingBalance = openingBalance.add(netProfit);
 
-        BigDecimal profitMargin = profitMarginService.calculateNetProfitMargin(totalRevenue, totalExpenses);
-        Map<String, BigDecimal> cashFlow = cashFlowService.calculateCashFlow(openingBalance, totalRevenue, totalExpenses);
+        BigDecimal grossMargin = BigDecimal.ZERO;
+        BigDecimal netMargin = BigDecimal.ZERO;
+        if (totalRevenue.compareTo(BigDecimal.ZERO) != 0) {
+            grossMargin = totalRevenue.subtract(totalExpenses)
+                    .multiply(new BigDecimal("100"))
+                    .divide(totalRevenue, 2, RoundingMode.HALF_UP);
+            netMargin = netProfit.multiply(new BigDecimal("100"))
+                    .divide(totalRevenue, 2, RoundingMode.HALF_UP);
+        }
 
         Map<String, Object> summary = new HashMap<>();
         summary.put("totalRevenue", totalRevenue);
         summary.put("totalExpenses", totalExpenses);
         summary.put("netProfit", netProfit);
-        summary.put("profitMargin", profitMargin);
-        summary.put("cashFlow", cashFlow);
-        summary.put("startDate", startDate.toString());
-        summary.put("endDate", endDate.toString());
+        summary.put("openingBalance", openingBalance);
+        summary.put("closingBalance", closingBalance);
+        summary.put("grossMargin", grossMargin);
+        summary.put("netMargin", netMargin);
+        summary.put("expenseBreakdown", expenseService.getExpenseBreakdown(businessId, from, to));
+        summary.put("fixedVsVariable", expenseService.getFixedVsVariable(businessId, from, to));
+        summary.put("expenseToRevenueRatio", expenseService.getExpenseToRevenueRatio(businessId, from, to));
         return summary;
     }
 }
+
