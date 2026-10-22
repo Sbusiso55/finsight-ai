@@ -1,81 +1,97 @@
 package com.finsight.service;
 
+import com.finsight.model.Transaction;
+import com.finsight.model.TransactionType;
+import com.finsight.repository.TransactionRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ExpenseService {
 
-    public BigDecimal calculateTotalExpenses(Map<String, BigDecimal> expenses) {
-        return expenses.values().stream()
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
+    @Autowired
+    private TransactionRepository transactionRepository;
 
-    public Map<String, BigDecimal> calculateExpenseBreakdown(Map<String, BigDecimal> expenses) {
-        BigDecimal total = calculateTotalExpenses(expenses);
+    public Map<String, BigDecimal> getExpenseBreakdownWithPercentages(Long businessId, LocalDate startDate, LocalDate endDate) {
+        List<Transaction> expenses = transactionRepository.findByBusinessIdAndDateBetween(businessId, startDate, endDate)
+                .stream()
+                .filter(t -> t.getType() == TransactionType.EXPENSE)
+                .toList();
+
+        BigDecimal total = expenses.stream()
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         Map<String, BigDecimal> breakdown = new HashMap<>();
-        expenses.forEach((category, amount) -> {
-            BigDecimal percentage = total.compareTo(BigDecimal.ZERO) == 0
-                    ? BigDecimal.ZERO
-                    : amount.divide(total, 4, RoundingMode.HALF_UP)
-                            .multiply(new BigDecimal("100"));
-            breakdown.put(category, percentage);
-        });
+        breakdown.put("totalExpenses", total);
+
+        if (total.compareTo(BigDecimal.ZERO) > 0) {
+            Map<String, BigDecimal> categoryTotals = new HashMap<>();
+            for (Transaction t : expenses) {
+                String category = t.getCategory() != null ? t.getCategory().getName() : "Uncategorized";
+                categoryTotals.merge(category, t.getAmount(), BigDecimal::add);
+            }
+            for (Map.Entry<String, BigDecimal> entry : categoryTotals.entrySet()) {
+                breakdown.put(entry.getKey(), entry.getValue());
+                BigDecimal percentage = entry.getValue()
+                        .multiply(new BigDecimal("100"))
+                        .divide(total, 2, RoundingMode.HALF_UP);
+                breakdown.put(entry.getKey() + "_percentage", percentage);
+            }
+        }
         return breakdown;
     }
 
-    public BigDecimal calculateFixedCosts(BigDecimal salaries, BigDecimal rent) {
-        return salaries.add(rent);
-    }
+    public Map<String, BigDecimal> calculateFixedVsVariable(Long businessId, LocalDate startDate, LocalDate endDate) {
+        List<Transaction> expenses = transactionRepository.findByBusinessIdAndDateBetween(businessId, startDate, endDate)
+                .stream()
+                .filter(t -> t.getType() == TransactionType.EXPENSE)
+                .toList();
 
-    public BigDecimal calculateVariableCosts(BigDecimal totalExpenses, BigDecimal fixedCosts) {
-        return totalExpenses.subtract(fixedCosts);
-    }
+        BigDecimal fixedCosts = BigDecimal.ZERO;
+        BigDecimal variableCosts = BigDecimal.ZERO;
 
-    public Map<String, BigDecimal> getExpenseSummary(Map<String, BigDecimal> expenses, BigDecimal salaries, BigDecimal rent) {
-        BigDecimal totalExpenses = calculateTotalExpenses(expenses);
-        BigDecimal fixedCosts = calculateFixedCosts(salaries, rent);
-        BigDecimal variableCosts = calculateVariableCosts(totalExpenses, fixedCosts);
-
-        BigDecimal fixedPercentage = totalExpenses.compareTo(BigDecimal.ZERO) == 0
-                ? BigDecimal.ZERO
-                : fixedCosts.divide(totalExpenses, 4, RoundingMode.HALF_UP)
-                        .multiply(new BigDecimal("100"));
-
-        BigDecimal variablePercentage = totalExpenses.compareTo(BigDecimal.ZERO) == 0
-                ? BigDecimal.ZERO
-                : variableCosts.divide(totalExpenses, 4, RoundingMode.HALF_UP)
-                        .multiply(new BigDecimal("100"));
-
-        Map<String, BigDecimal> summary = new HashMap<>();
-        summary.put("totalExpenses", totalExpenses);
-        summary.put("fixedCosts", fixedCosts);
-        summary.put("variableCosts", variableCosts);
-        summary.put("fixedPercentage", fixedPercentage);
-        summary.put("variablePercentage", variablePercentage);
-        return summary;
-    }
-
-    public Map<String, Object> getFullExpenseReport(Map<String, BigDecimal> expenses, BigDecimal salaries, BigDecimal rent) {
-        Map<String, Object> report = new HashMap<>();
-        report.put("breakdown", calculateExpenseBreakdown(expenses));
-        report.put("summary", getExpenseSummary(expenses, salaries, rent));
-
-        BigDecimal total = calculateTotalExpenses(expenses);
-        String largestCategory = "";
-        BigDecimal largestAmount = BigDecimal.ZERO;
-        for (Map.Entry<String, BigDecimal> entry : expenses.entrySet()) {
-            if (entry.getValue().compareTo(largestAmount) > 0) {
-                largestAmount = entry.getValue();
-                largestCategory = entry.getKey();
+        for (Transaction t : expenses) {
+            if (t.getCategory() != null && t.getCategory().getName() != null &&
+                    (t.getCategory().getName().equalsIgnoreCase("Salaries") ||
+                     t.getCategory().getName().equalsIgnoreCase("Rent"))) {
+                fixedCosts = fixedCosts.add(t.getAmount());
+            } else {
+                variableCosts = variableCosts.add(t.getAmount());
             }
         }
-        report.put("largestExpenseCategory", largestCategory);
-        report.put("largestExpenseAmount", largestAmount);
-        return report;
+
+        Map<String, BigDecimal> result = new HashMap<>();
+        result.put("fixedCosts", fixedCosts);
+        result.put("variableCosts", variableCosts);
+        return result;
+    }
+
+    public BigDecimal calculateExpenseToRevenueRatio(Long businessId, LocalDate startDate, LocalDate endDate) {
+        List<Transaction> transactions = transactionRepository.findByBusinessIdAndDateBetween(businessId, startDate, endDate);
+
+        BigDecimal totalExpenses = transactions.stream()
+                .filter(t -> t.getType() == TransactionType.EXPENSE)
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalRevenue = transactions.stream()
+                .filter(t -> t.getType() == TransactionType.INCOME)
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (totalRevenue.compareTo(BigDecimal.ZERO) == 0) {
+            return BigDecimal.ZERO;
+        }
+
+        return totalExpenses.multiply(new BigDecimal("100"))
+                .divide(totalRevenue, 2, RoundingMode.HALF_UP);
     }
 }
