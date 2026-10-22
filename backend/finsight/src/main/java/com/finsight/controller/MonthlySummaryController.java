@@ -1,7 +1,9 @@
+
 package com.finsight.controller;
 
 import com.finsight.service.MonthlySummaryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,24 +12,19 @@ import java.time.LocalDate;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/summary")
+@RequestMapping("/api/monthly-summary")
 public class MonthlySummaryController {
 
     @Autowired
     private MonthlySummaryService monthlySummaryService;
 
-    @GetMapping("/monthly")
+    @GetMapping
     public ResponseEntity<Map<String, Object>> getMonthlySummary(
             @RequestParam Long businessId,
-            @RequestParam String startDate,
-            @RequestParam String endDate,
-            @RequestParam BigDecimal openingBalance,
-            @RequestParam BigDecimal previousRevenue) {
-        return ResponseEntity.ok(monthlySummaryService.generateMonthlySummary(
-                businessId,
-                LocalDate.parse(startDate),
-                LocalDate.parse(endDate),
-                openingBalance,
-                previousRevenue));
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam BigDecimal openingBalance) {
+        return ResponseEntity.ok(monthlySummaryService.generateMonthlySummary(businessId, from, to, openingBalance));
     }
 }
+
