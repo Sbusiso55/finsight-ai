@@ -1,7 +1,7 @@
 package com.finsight.service;
 
 import com.finsight.model.Transaction;
-import com.finsight.model.TransactionType;
+import com.finsight.model.enums.TransactionType;
 import com.finsight.repository.TransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,60 +19,48 @@ public class ForecastingService {
     @Autowired
     private TransactionRepository transactionRepository;
 
-    public Map<String, BigDecimal> forecastRevenue(Long businessId, int monthsOfHistory) {
-        LocalDate endDate = LocalDate.now();
-        LocalDate startDate = endDate.minusMonths(monthsOfHistory);
+    public Map<String, Object> generateForecast(Long businessId, LocalDate startDate, LocalDate endDate) {
+        Map<String, Object> forecast = new HashMap<>();
 
-        List<Transaction> transactions = transactionRepository.findByBusinessIdAndDateBetween(businessId, startDate, endDate);
+        List<Transaction> allTransactions = transactionRepository.findByBusinessIdBetweenDates(
+                businessId, startDate, endDate);
 
-        BigDecimal totalRevenue = transactions.stream()
+        if (allTransactions.size() < 3) {
+            forecast.put("error", "At least 3 months of data required for forecasting");
+            return forecast;
+        }
+
+        BigDecimal totalRevenue = allTransactions.stream()
                 .filter(t -> t.getType() == TransactionType.INCOME)
                 .map(Transaction::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal avgMonthlyRevenue = monthsOfHistory > 0
-                ? totalRevenue.divide(new BigDecimal(monthsOfHistory), 2, RoundingMode.HALF_UP)
-                : BigDecimal.ZERO;
-
-        Map<String, BigDecimal> forecast = new HashMap<>();
-        forecast.put("averageMonthlyRevenue", avgMonthlyRevenue);
-        forecast.put("forecastedRevenue", avgMonthlyRevenue.multiply(new BigDecimal("1.1")));
-        return forecast;
-    }
-
-    public Map<String, BigDecimal> forecastExpenses(Long businessId, int monthsOfHistory) {
-        LocalDate endDate = LocalDate.now();
-        LocalDate startDate = endDate.minusMonths(monthsOfHistory);
-
-        List<Transaction> transactions = transactionRepository.findByBusinessIdAndDateBetween(businessId, startDate, endDate);
-
-        BigDecimal totalExpenses = transactions.stream()
+        BigDecimal totalExpenses = allTransactions.stream()
                 .filter(t -> t.getType() == TransactionType.EXPENSE)
                 .map(Transaction::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal avgMonthlyExpenses = monthsOfHistory > 0
-                ? totalExpenses.divide(new BigDecimal(monthsOfHistory), 2, RoundingMode.HALF_UP)
-                : BigDecimal.ZERO;
+        long months = java.time.temporal.ChronoUnit.MONTHS.between(startDate, endDate);
+        if (months == 0) months = 1;
 
-        Map<String, BigDecimal> forecast = new HashMap<>();
-        forecast.put("averageMonthlyExpenses", avgMonthlyExpenses);
-        forecast.put("forecastedExpenses", avgMonthlyExpenses.multiply(new BigDecimal("1.05")));
-        return forecast;
-    }
+        BigDecimal avgRevenue = totalRevenue.divide(new BigDecimal(months), 2, RoundingMode.HALF_UP);
+        BigDecimal avgExpenses = totalExpenses.divide(new BigDecimal(months), 2, RoundingMode.HALF_UP);
+        BigDecimal avgProfit = avgRevenue.subtract(avgExpenses);
 
-    public Map<String, BigDecimal> forecastProfit(Long businessId, int monthsOfHistory) {
-        Map<String, BigDecimal> revenueForecast = forecastRevenue(businessId, monthsOfHistory);
-        Map<String, BigDecimal> expenseForecast = forecastExpenses(businessId, monthsOfHistory);
+        BigDecimal growthFactor = new BigDecimal("1.05");
 
-        BigDecimal forecastedRevenue = revenueForecast.get("forecastedRevenue");
-        BigDecimal forecastedExpenses = expenseForecast.get("forecastedExpenses");
-        BigDecimal forecastedProfit = forecastedRevenue.subtract(forecastedExpenses);
+        forecast.put("projectedRevenue", avgRevenue.multiply(growthFactor).setScale(2, RoundingMode.HALF_UP));
+        forecast.put("projectedExpenses", avgExpenses.multiply(growthFactor).setScale(2, RoundingMode.HALF_UP));
+        forecast.put("projectedProfit", avgProfit.multiply(growthFactor).setScale(2, RoundingMode.HALF_UP));
+        forecast.put("averageMonthlyRevenue", avgRevenue);
+        forecast.put("averageMonthlyExpenses", avgExpenses);
+        forecast.put("dataMonths", months);
 
-        Map<String, BigDecimal> forecast = new HashMap<>();
-        forecast.put("forecastedRevenue", forecastedRevenue);
-        forecast.put("forecastedExpenses", forecastedExpenses);
-        forecast.put("forecastedProfit", forecastedProfit);
+        BigDecimal revenueHigh = avgRevenue.multiply(new BigDecimal("1.15")).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal revenueLow = avgRevenue.multiply(new BigDecimal("0.90")).setScale(2, RoundingMode.HALF_UP);
+        forecast.put("revenueRangeHigh", revenueHigh);
+        forecast.put("revenueRangeLow", revenueLow);
+
         return forecast;
     }
 }
