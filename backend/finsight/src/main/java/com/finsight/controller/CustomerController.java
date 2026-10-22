@@ -1,3 +1,4 @@
+
 package com.finsight.controller;
 
 import com.finsight.model.Customer;
@@ -15,41 +16,37 @@ public class CustomerController {
     @Autowired
     private CustomerService customerService;
 
-    @GetMapping
-    public ResponseEntity<List<Customer>> getAllCustomers() {
-        return ResponseEntity.ok(customerService.findAll());
+    @GetMapping("/business/{businessId}")
+    public ResponseEntity<List<Customer>> getByBusiness(@PathVariable Long businessId) {
+        return ResponseEntity.ok(customerService.getCustomersByBusiness(businessId));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Customer> getCustomerById(@PathVariable Long id) {
-        return customerService.findById(id)
+    public ResponseEntity<Customer> getById(@PathVariable Long id) {
+        return customerService.getCustomerById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/business/{businessId}")
-    public ResponseEntity<List<Customer>> getCustomersByBusiness(@PathVariable Long businessId) {
-        return ResponseEntity.ok(customerService.findByBusinessId(businessId));
-    }
-
     @PostMapping
-    public ResponseEntity<Customer> createCustomer(@RequestBody Customer customer) {
-        return ResponseEntity.ok(customerService.save(customer));
+    public ResponseEntity<Customer> create(@RequestBody Customer customer) {
+        return ResponseEntity.ok(customerService.saveCustomer(customer));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Customer> updateCustomer(@PathVariable Long id, @RequestBody Customer customer) {
-        return customerService.findById(id)
+    public ResponseEntity<Customer> update(@PathVariable Long id, @RequestBody Customer customer) {
+        return customerService.getCustomerById(id)
                 .map(existing -> {
-                    customer.setId(existing.getId());
-                    return ResponseEntity.ok(customerService.save(customer));
+                    customer.setId(id);
+                    return ResponseEntity.ok(customerService.saveCustomer(customer));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCustomer(@PathVariable Long id) {
-        customerService.deleteById(id);
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        customerService.deleteCustomer(id);
         return ResponseEntity.noContent().build();
     }
 }
+
