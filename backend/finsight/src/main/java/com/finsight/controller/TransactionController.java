@@ -1,4 +1,3 @@
-
 package com.finsight.controller;
 
 import com.finsight.model.Transaction;
@@ -73,4 +72,5 @@ public class TransactionController {
         return ResponseEntity.ok(transactionService.getTotalExpenses(businessId, from, to));
     }
 }
+
 
