@@ -1,3 +1,4 @@
+
 package com.finsight.service;
 
 import com.finsight.model.Customer;
@@ -14,23 +15,20 @@ public class CustomerService {
     @Autowired
     private CustomerRepository customerRepository;
 
-    public List<Customer> findAll() {
-        return customerRepository.findAll();
+    public List<Customer> getCustomersByBusiness(Long businessId) {
+        return customerRepository.findByBusinessIdOrderByName(businessId);
     }
 
-    public Optional<Customer> findById(Long id) {
+    public Optional<Customer> getCustomerById(Long id) {
         return customerRepository.findById(id);
     }
 
-    public List<Customer> findByBusinessId(Long businessId) {
-        return customerRepository.findByBusinessId(businessId);
-    }
-
-    public Customer save(Customer customer) {
+    public Customer saveCustomer(Customer customer) {
         return customerRepository.save(customer);
     }
 
-    public void deleteById(Long id) {
+    public void deleteCustomer(Long id) {
         customerRepository.deleteById(id);
     }
 }
+
