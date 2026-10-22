@@ -1,6 +1,8 @@
+
 package com.finsight.controller;
 
 import com.finsight.service.CashFlowService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,31 +13,14 @@ import java.util.Map;
 @RequestMapping("/api/cashflow")
 public class CashFlowController {
 
-    private final CashFlowService cashFlowService;
-
-    public CashFlowController(CashFlowService cashFlowService) {
-        this.cashFlowService = cashFlowService;
-    }
-
-    @GetMapping("/net")
-    public ResponseEntity<BigDecimal> getNetCashFlow(
-            @RequestParam BigDecimal totalInflows,
-            @RequestParam BigDecimal totalOutflows) {
-        return ResponseEntity.ok(cashFlowService.calculateNetCashFlow(totalInflows, totalOutflows));
-    }
-
-    @GetMapping("/closing-balance")
-    public ResponseEntity<BigDecimal> getClosingBalance(
-            @RequestParam BigDecimal openingBalance,
-            @RequestParam BigDecimal netCashFlow) {
-        return ResponseEntity.ok(cashFlowService.calculateClosingBalance(openingBalance, netCashFlow));
-    }
+    @Autowired
+    private CashFlowService cashFlowService;
 
     @GetMapping("/summary")
     public ResponseEntity<Map<String, BigDecimal>> getCashFlowSummary(
             @RequestParam BigDecimal openingBalance,
-            @RequestParam BigDecimal totalInflows,
-            @RequestParam BigDecimal totalOutflows) {
-        return ResponseEntity.ok(cashFlowService.getCashFlowSummary(openingBalance, totalInflows, totalOutflows));
+            @RequestParam BigDecimal totalRevenue,
+            @RequestParam BigDecimal totalExpenses) {
+        return ResponseEntity.ok(cashFlowService.calculateCashFlow(openingBalance, totalRevenue, totalExpenses));
     }
 }
