@@ -1,8 +1,9 @@
 package com.finsight.service;
 
 import com.finsight.model.Transaction;
-import com.finsight.model.enums.TransactionType;
+import com.finsight.model.TransactionType;
 import com.finsight.repository.TransactionRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -10,50 +11,47 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class TransactionService {
 
-    private final TransactionRepository transactionRepository;
+    @Autowired
+    private TransactionRepository transactionRepository;
 
-    public TransactionService(TransactionRepository transactionRepository) {
-        this.transactionRepository = transactionRepository;
+    public Page<Transaction> findAll(Pageable pageable) {
+        return transactionRepository.findAll(pageable);
     }
 
-    public Page<Transaction> getTransactionsByBusiness(Long businessId, Pageable pageable) {
-        return transactionRepository.findByBusinessId(businessId, pageable);
+    public Optional<Transaction> findById(Long id) {
+        return transactionRepository.findById(id);
     }
 
-    public Page<Transaction> getTransactionsByDateRange(Long businessId, LocalDate from, LocalDate to, Pageable pageable) {
-        return transactionRepository.findByBusinessIdAndTransactionDateBetween(businessId, from, to, pageable);
-    }
-
-    public List<Transaction> getTransactionsListByDateRange(Long businessId, LocalDate from, LocalDate to) {
-        return transactionRepository.findByBusinessIdAndTransactionDateBetweenOrderByTransactionDateAsc(businessId, from, to);
-    }
-
-    public Transaction getTransactionById(Long id, Long businessId) {
-        return transactionRepository.findByIdAndBusinessId(id, businessId)
-                .orElseThrow(() -> new RuntimeException("Transaction not found"));
-    }
-
-    public Transaction saveTransaction(Transaction transaction) {
+    public Transaction save(Transaction transaction) {
         return transactionRepository.save(transaction);
     }
 
-    public void deleteTransaction(Long id) {
+    public void deleteById(Long id) {
         transactionRepository.deleteById(id);
     }
 
-    public BigDecimal getTotalByType(Long businessId, TransactionType type, LocalDate from, LocalDate to) {
-        return transactionRepository.sumByType(businessId, type, from, to);
+    public BigDecimal calculateTotalRevenue(Long businessId, LocalDate startDate, LocalDate endDate) {
+        List<Transaction> transactions = transactionRepository.findByBusinessIdAndDateBetween(businessId, startDate, endDate);
+        return transactions.stream()
+                .filter(t -> t.getType() == TransactionType.INCOME)
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    public BigDecimal getTotalByCategory(Long businessId, Long categoryId, LocalDate from, LocalDate to) {
-        return transactionRepository.sumByCategory(businessId, categoryId, from, to);
+    public BigDecimal calculateTotalExpenses(Long businessId, LocalDate startDate, LocalDate endDate) {
+        List<Transaction> transactions = transactionRepository.findByBusinessIdAndDateBetween(businessId, startDate, endDate);
+        return transactions.stream()
+                .filter(t -> t.getType() == TransactionType.EXPENSE)
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    public List<TransactionRepository.CategoryTotal> getTotalsByCategory(Long businessId, TransactionType type, LocalDate from, LocalDate to) {
-        return transactionRepository.totalsByCategory(businessId, type, from, to);
+    public List<Transaction> findByBusinessIdAndDateBetween(Long businessId, LocalDate startDate, LocalDate endDate) {
+        return transactionRepository.findByBusinessIdAndDateBetween(businessId, startDate, endDate);
     }
 }
