@@ -1,6 +1,8 @@
+
 package com.finsight.service;
 
 import com.finsight.model.Category;
+import com.finsight.model.enums.TransactionType;
 import com.finsight.repository.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,23 +16,28 @@ public class CategoryService {
     @Autowired
     private CategoryRepository categoryRepository;
 
-    public List<Category> findAll() {
-        return categoryRepository.findAll();
+    public List<Category> getCategoriesByBusiness(Long businessId) {
+        return categoryRepository.findByBusinessIdOrderByName(businessId);
     }
 
-    public Optional<Category> findById(Long id) {
+    public List<Category> getCategoriesByBusinessAndType(Long businessId, TransactionType type) {
+        return categoryRepository.findByBusinessIdAndType(businessId, type);
+    }
+
+    public Optional<Category> getCategoryById(Long id) {
         return categoryRepository.findById(id);
     }
 
-    public List<Category> findByBusinessId(Long businessId) {
-        return categoryRepository.findByBusinessId(businessId);
-    }
-
-    public Category save(Category category) {
+    public Category saveCategory(Category category) {
         return categoryRepository.save(category);
     }
 
-    public void deleteById(Long id) {
+    public void deleteCategory(Long id) {
         categoryRepository.deleteById(id);
     }
+
+    public boolean categoryExists(Long businessId, String name) {
+        return categoryRepository.existsByBusinessIdAndNameIgnoreCase(businessId, name);
+    }
 }
+
