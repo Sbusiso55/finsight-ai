@@ -1,3 +1,4 @@
+
 package com.finsight.service;
 
 import com.finsight.model.Business;
@@ -14,23 +15,24 @@ public class BusinessService {
     @Autowired
     private BusinessRepository businessRepository;
 
-    public List<Business> findAll() {
-        return businessRepository.findAll();
+    public List<Business> getBusinessesByOwner(Long ownerId) {
+        return businessRepository.findByOwnerId(ownerId);
     }
 
-    public Optional<Business> findById(Long id) {
+    public List<Business> getAccessibleBusinesses(Long userId) {
+        return businessRepository.findAccessibleByUser(userId);
+    }
+
+    public Optional<Business> getBusinessById(Long id) {
         return businessRepository.findById(id);
     }
 
-    public List<Business> findByUserId(Long userId) {
-        return businessRepository.findByUserId(userId);
-    }
-
-    public Business save(Business business) {
+    public Business saveBusiness(Business business) {
         return businessRepository.save(business);
     }
 
-    public void deleteById(Long id) {
+    public void deleteBusiness(Long id) {
         businessRepository.deleteById(id);
     }
 }
+
