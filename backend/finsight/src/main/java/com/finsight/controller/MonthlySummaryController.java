@@ -1,29 +1,33 @@
 package com.finsight.controller;
 
-import com.finsight.model.MonthlySummary;
 import com.finsight.service.MonthlySummaryService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/monthly-summary")
+@RequestMapping("/api/summary")
 public class MonthlySummaryController {
 
-    private final MonthlySummaryService monthlySummaryService;
+    @Autowired
+    private MonthlySummaryService monthlySummaryService;
 
-    public MonthlySummaryController(MonthlySummaryService monthlySummaryService) {
-        this.monthlySummaryService = monthlySummaryService;
-    }
-
-    @GetMapping("/generate")
-    public ResponseEntity<Map<String, BigDecimal>> generateSummary(
-            @RequestParam BigDecimal totalRevenue,
-            @RequestParam BigDecimal totalExpenses,
-            @RequestParam BigDecimal openingBalance) {
+    @GetMapping("/monthly")
+    public ResponseEntity<Map<String, Object>> getMonthlySummary(
+            @RequestParam Long businessId,
+            @RequestParam String startDate,
+            @RequestParam String endDate,
+            @RequestParam BigDecimal openingBalance,
+            @RequestParam BigDecimal previousRevenue) {
         return ResponseEntity.ok(monthlySummaryService.generateMonthlySummary(
-                totalRevenue, totalExpenses, openingBalance));
+                businessId,
+                LocalDate.parse(startDate),
+                LocalDate.parse(endDate),
+                openingBalance,
+                previousRevenue));
     }
 }
