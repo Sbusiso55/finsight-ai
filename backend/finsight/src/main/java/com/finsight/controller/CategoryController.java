@@ -1,3 +1,4 @@
+
 package com.finsight.controller;
 
 import com.finsight.model.Category;
@@ -15,41 +16,37 @@ public class CategoryController {
     @Autowired
     private CategoryService categoryService;
 
-    @GetMapping
-    public ResponseEntity<List<Category>> getAllCategories() {
-        return ResponseEntity.ok(categoryService.findAll());
+    @GetMapping("/business/{businessId}")
+    public ResponseEntity<List<Category>> getByBusiness(@PathVariable Long businessId) {
+        return ResponseEntity.ok(categoryService.getCategoriesByBusiness(businessId));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Category> getCategoryById(@PathVariable Long id) {
-        return categoryService.findById(id)
+    public ResponseEntity<Category> getById(@PathVariable Long id) {
+        return categoryService.getCategoryById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/business/{businessId}")
-    public ResponseEntity<List<Category>> getCategoriesByBusiness(@PathVariable Long businessId) {
-        return ResponseEntity.ok(categoryService.findByBusinessId(businessId));
-    }
-
     @PostMapping
-    public ResponseEntity<Category> createCategory(@RequestBody Category category) {
-        return ResponseEntity.ok(categoryService.save(category));
+    public ResponseEntity<Category> create(@RequestBody Category category) {
+        return ResponseEntity.ok(categoryService.saveCategory(category));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Category> updateCategory(@PathVariable Long id, @RequestBody Category category) {
-        return categoryService.findById(id)
+    public ResponseEntity<Category> update(@PathVariable Long id, @RequestBody Category category) {
+        return categoryService.getCategoryById(id)
                 .map(existing -> {
-                    category.setId(existing.getId());
-                    return ResponseEntity.ok(categoryService.save(category));
+                    category.setId(id);
+                    return ResponseEntity.ok(categoryService.saveCategory(category));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
-        categoryService.deleteById(id);
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        categoryService.deleteCategory(id);
         return ResponseEntity.noContent().build();
     }
 }
+
