@@ -1,6 +1,7 @@
 package com.finsight.controller;
 
 import com.finsight.service.ExpenseService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,28 +12,31 @@ import java.util.Map;
 @RequestMapping("/api/expenses")
 public class ExpenseController {
 
-    private final ExpenseService expenseService;
+    @Autowired
+    private ExpenseService expenseService;
 
-    public ExpenseController(ExpenseService expenseService) {
-        this.expenseService = expenseService;
+    @GetMapping("/total")
+    public ResponseEntity<BigDecimal> getTotalExpenses(@RequestParam Map<String, BigDecimal> expenseBreakdown) {
+        return ResponseEntity.ok(expenseService.calculateTotalExpenses(expenseBreakdown));
+    }
+
+    @GetMapping("/fixed-variable")
+    public ResponseEntity<Map<String, BigDecimal>> getFixedVariableSplit(
+            @RequestParam BigDecimal totalFixed,
+            @RequestParam BigDecimal totalVariable) {
+        return ResponseEntity.ok(expenseService.calculateFixedVsVariable(totalFixed, totalVariable));
+    }
+
+    @GetMapping("/ratio")
+    public ResponseEntity<BigDecimal> getExpenseToRevenueRatio(
+            @RequestParam BigDecimal totalExpenses,
+            @RequestParam BigDecimal totalRevenue) {
+        return ResponseEntity.ok(expenseService.calculateExpenseToRevenueRatio(totalExpenses, totalRevenue));
     }
 
     @GetMapping("/breakdown")
-    public ResponseEntity<Map<String, BigDecimal>> getExpenseBreakdown(
-            @RequestParam Map<String, BigDecimal> expenses) {
-        return ResponseEntity.ok(expenseService.calculateExpenseBreakdown(expenses));
-    }
-
-    @GetMapping("/total")
-    public ResponseEntity<BigDecimal> getTotalExpenses(
-            @RequestParam Map<String, BigDecimal> expenses) {
-        return ResponseEntity.ok(expenseService.calculateTotalExpenses(expenses));
-    }
-
-    @GetMapping("/fixed-variable-split")
-    public ResponseEntity<Map<String, BigDecimal>> getFixedVariableSplit(
-            @RequestParam BigDecimal fixedCosts,
-            @RequestParam BigDecimal variableCosts) {
-        return ResponseEntity.ok(expenseService.calculateFixedVariableSplit(fixedCosts, variableCosts));
+    public ResponseEntity<Map<String, Map<String, BigDecimal>>> getExpenseBreakdown(
+            @RequestParam Map<String, BigDecimal> expenseBreakdown) {
+        return ResponseEntity.ok(expenseService.getExpenseBreakdownWithPercentages(expenseBreakdown));
     }
 }
