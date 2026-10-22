@@ -1,3 +1,4 @@
+
 package com.finsight.service;
 
 import com.finsight.model.Transaction;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class TransactionService {
@@ -18,36 +20,44 @@ public class TransactionService {
     @Autowired
     private TransactionRepository transactionRepository;
 
-    public Transaction createTransaction(Transaction transaction) {
-        return transactionRepository.save(transaction);
-    }
-
-    public Page<Transaction> getTransactionsByBusiness(Long businessId, Pageable pageable) {
+    public Page<Transaction> findByBusinessId(Long businessId, Pageable pageable) {
         return transactionRepository.findByBusinessId(businessId, pageable);
     }
 
-    public Transaction getTransactionById(Long id) {
-        return transactionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+    public Page<Transaction> findByBusinessIdAndDateRange(Long businessId, LocalDate from, LocalDate to, Pageable pageable) {
+        return transactionRepository.findByBusinessIdAndTransactionDateBetween(businessId, from, to, pageable);
     }
 
-    public void deleteTransaction(Long id) {
+    public List<Transaction> findByBusinessIdAndDateRangeList(Long businessId, LocalDate from, LocalDate to) {
+        return transactionRepository.findByBusinessIdAndTransactionDateBetweenOrderByTransactionDateAsc(businessId, from, to);
+    }
+
+    public Optional<Transaction> findByIdAndBusinessId(Long id, Long businessId) {
+        return transactionRepository.findByIdAndBusinessId(id, businessId);
+    }
+
+    public Transaction save(Transaction transaction) {
+        return transactionRepository.save(transaction);
+    }
+
+    public void deleteById(Long id) {
         transactionRepository.deleteById(id);
     }
 
-    public BigDecimal getTotalRevenue(Long businessId, LocalDate startDate, LocalDate endDate) {
-        List<Transaction> income = transactionRepository.findByBusinessIdAndTypeBetweenDates(
-                businessId, TransactionType.INCOME, startDate, endDate);
-        return income.stream()
-                .map(Transaction::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    public BigDecimal getTotalRevenue(Long businessId, LocalDate from, LocalDate to) {
+        return transactionRepository.sumByType(businessId, TransactionType.INCOME, from, to);
     }
 
-    public BigDecimal getTotalExpenses(Long businessId, LocalDate startDate, LocalDate endDate) {
-        List<Transaction> expenses = transactionRepository.findByBusinessIdAndTypeBetweenDates(
-                businessId, TransactionType.EXPENSE, startDate, endDate);
-        return expenses.stream()
-                .map(Transaction::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    public BigDecimal getTotalExpenses(Long businessId, LocalDate from, LocalDate to) {
+        return transactionRepository.sumByType(businessId, TransactionType.EXPENSE, from, to);
+    }
+
+    public List<TransactionRepository.CategoryTotal> getRevenueByCategory(Long businessId, LocalDate from, LocalDate to) {
+        return transactionRepository.totalsByCategory(businessId, TransactionType.INCOME, from, to);
+    }
+
+    public List<TransactionRepository.CategoryTotal> getExpensesByCategory(Long businessId, LocalDate from, LocalDate to) {
+        return transactionRepository.totalsByCategory(businessId, TransactionType.EXPENSE, from, to);
     }
 }
+
