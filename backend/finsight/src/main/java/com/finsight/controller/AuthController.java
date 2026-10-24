@@ -30,6 +30,7 @@ public class AuthController {
         User user = authService.signup(
                 request.getFullName(),
                 request.getEmail(),
+                request.getPhoneNumber(),
                 request.getPassword()
         );
 

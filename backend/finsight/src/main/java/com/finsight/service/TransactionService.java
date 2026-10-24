@@ -2,6 +2,7 @@
 package com.finsight.service;
 
 import com.finsight.model.Transaction;
+import com.finsight.model.enums.CostClassification;
 import com.finsight.model.enums.TransactionType;
 import com.finsight.repository.TransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,5 +60,18 @@ public class TransactionService {
     public List<TransactionRepository.CategoryTotal> getExpensesByCategory(Long businessId, LocalDate from, LocalDate to) {
         return transactionRepository.totalsByCategory(businessId, TransactionType.EXPENSE, from, to);
     }
+
+
+    public BigDecimal getCostOfGoodsSold(
+            Long businessId, LocalDate from, LocalDate to) {
+
+        return transactionRepository.sumByCostClassification(
+                businessId,
+                CostClassification.COST_OF_GOODS_SOLD,
+                from,
+                to);
+    }
+
+
 }
 

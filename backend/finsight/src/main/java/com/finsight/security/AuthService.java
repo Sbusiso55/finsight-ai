@@ -24,7 +24,7 @@ public class AuthService {
         this.jwtService = jwtService;
     }
 
-    public User signup(String fullName, String email, String rawPassword) {
+    public User signup(String fullName, String email, String phoneNumber,String rawPassword) {
 
         if (userRepository.existsByEmail(email)) {
             throw new IllegalArgumentException("Email is already registered");
@@ -33,6 +33,7 @@ public class AuthService {
         User user = new User();
         user.setFullName(fullName);
         user.setEmail(email);
+        user.setPhoneNumber(phoneNumber);
         user.setPasswordHash(passwordEncoder.encode(rawPassword));
 
         return userRepository.save(user);
@@ -45,8 +46,7 @@ public class AuthService {
                 .orElseThrow(InvalidCredentialsException::new);
 
         if (!passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
-            throw new IllegalArgumentException("Invalid email or password");
-        }
+            throw new InvalidCredentialsException();        }
 
         if (!user.isEnabled()) {
             throw new InvalidCredentialsException();
