@@ -5,6 +5,8 @@ import com.finsight.service.BusinessService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.List;
 
@@ -32,9 +34,22 @@ public class BusinessController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+//    @PostMapping
+//    public ResponseEntity<Business> create(@RequestBody Business business) {
+//        return ResponseEntity.ok(businessService.saveBusiness(business));
+//    }
+
     @PostMapping
-    public ResponseEntity<Business> create(@RequestBody Business business) {
-        return ResponseEntity.ok(businessService.saveBusiness(business));
+    public ResponseEntity<Business> create(
+            @RequestBody Business business,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Business savedBusiness = businessService.saveBusiness(
+                business,
+                userDetails.getUsername()
+        );
+
+        return ResponseEntity.ok(savedBusiness);
     }
 
     @PutMapping("/{id}")
@@ -42,7 +57,7 @@ public class BusinessController {
         return businessService.getBusinessById(id)
                 .map(existing -> {
                     business.setId(id);
-                    return ResponseEntity.ok(businessService.saveBusiness(business));
+                    return ResponseEntity.ok(businessService.saveBusiness(business, business.getOwner().getEmail()));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
