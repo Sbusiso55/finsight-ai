@@ -22,7 +22,6 @@ public class TransactionDTO {
     private CategoryDTO category;
     private CustomerDTO customer;
 
-
     public static TransactionDTO from(Transaction transaction) {
         CustomerDTO customer = null;
         if (transaction.getCustomer() != null) {

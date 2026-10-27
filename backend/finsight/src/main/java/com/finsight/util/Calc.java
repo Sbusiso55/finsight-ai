@@ -6,7 +6,6 @@ import java.util.Locale;
 
 /** Safe percentage maths and rand formatting. Percentages are returned as e.g. 36.29 (not 0.3629). */
 public final class Calc {
-
     private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
 
     private Calc() { }

@@ -10,7 +10,6 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class BusinessDTO {
-
     private Long id;
     private String name;
     private String industry;

@@ -7,7 +7,6 @@ import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-
 @Getter
 @AllArgsConstructor
 public class MonthlySummaryDTO {
@@ -28,7 +27,6 @@ public class MonthlySummaryDTO {
     private BigDecimal netCashFlow;
     private BigDecimal openingBalance;
     private BigDecimal closingBalance;
-
 
     public static MonthlySummaryDTO from(MonthlySummary summary) {
         return new MonthlySummaryDTO(

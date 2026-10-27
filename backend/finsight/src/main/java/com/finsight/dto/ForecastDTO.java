@@ -13,7 +13,6 @@ import lombok.Getter;
 @AllArgsConstructor
 public class ForecastDTO {
 
-
     private LocalDate forecastMonth;
     private BigDecimal projectedRevenue;
     private BigDecimal revenueLow;
@@ -29,7 +28,6 @@ public class ForecastDTO {
     private ForecastConfidence confidence;
     private String disclaimer;
     private Instant generatedAt;
-
 
     public static ForecastDTO from(Forecast forecast) {
         return new ForecastDTO(

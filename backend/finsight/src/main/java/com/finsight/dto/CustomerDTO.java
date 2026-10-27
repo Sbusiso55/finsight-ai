@@ -4,7 +4,6 @@ import com.finsight.model.Customer;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-
 @Getter
 @AllArgsConstructor
 public class CustomerDTO {
