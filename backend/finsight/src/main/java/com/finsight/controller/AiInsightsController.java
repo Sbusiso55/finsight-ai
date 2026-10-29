@@ -9,6 +9,10 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/ai")
+@CrossOrigin(origins = {
+        "http://localhost:3000",
+        "http://localhost:5173"
+})
 public class AiInsightsController {
 
     private final AiInsightsService aiInsightsService;
@@ -27,5 +31,3 @@ public class AiInsightsController {
         return ResponseEntity.ok(aiInsightsService.askAi(request));
     }
 }
-
-
