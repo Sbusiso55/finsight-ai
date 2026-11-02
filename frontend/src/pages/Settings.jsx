@@ -1,50 +1,140 @@
 import React, { useState } from 'react';
-import Navbar from '../components/Navbar';
 import './Settings.css';
 
 const Settings = () => {
-    const [businessName, setBusinessName] = useState('');
-    const [email, setEmail] = useState('');
-    const [currency, setCurrency] = useState('ZAR');
+  const [formData, setFormData] = useState({
+    name: 'Alex Morgan',
+    email: 'alex.morgan@example.com',
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
 
-    const handleSave = (e) => {
-        e.preventDefault();
-        alert('Settings saved successfully.');
-    };
+  const [message, setMessage] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-    return (
-        <div className="settings-wrapper">
-            <Navbar />
-            <div className="settings-content">
-                <h1 className="settings-title">Settings</h1>
-                <p className="settings-subtitle">Manage your account and preferences.</p>
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
-                <form className="settings-form" onSubmit={handleSave}>
-                    <div className="settings-section">
-                        <h3 className="settings-section-title">Business Information</h3>
-                        <div className="settings-field">
-                            <label>Business Name</label>
-                            <input type="text" placeholder="Enter your business name" value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
-                        </div>
-                        <div className="settings-field">
-                            <label>Email</label>
-                            <input type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} />
-                        </div>
-                        <div className="settings-field">
-                            <label>Currency</label>
-                            <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
-                                <option value="ZAR">ZAR — South African Rand</option>
-                                <option value="USD">USD — US Dollar</option>
-                                <option value="EUR">EUR — Euro</option>
-                                <option value="GBP">GBP — British Pound</option>
-                            </select>
-                        </div>
-                    </div>
-                    <button type="submit" className="settings-save">Save Changes</button>
-                </form>
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setMessage(null);
+
+    if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
+      setMessage({ type: 'error', text: 'New passwords do not match.' });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    // Simulate API call
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setMessage({ type: 'success', text: 'Settings saved successfully.' });
+      setFormData((prev) => ({
+        ...prev,
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      }));
+    }, 800);
+  };
+
+  return (
+    <div className="settings-wrapper">
+      <div className="settings-content">
+        <h2 className="settings-title">Account Settings</h2>
+        <p className="settings-subtitle">Manage your profile details and security preferences.</p>
+
+        {message && (
+          <div className={`settings-alert ${message.type}`}>
+            {message.text}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="settings-form">
+          <div className="settings-section">
+            <h3 className="settings-section-title">Profile Details</h3>
+            
+            <div className="settings-field">
+              <label htmlFor="name">Full Name</label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                placeholder="Enter your name"
+              />
             </div>
-        </div>
-    );
+
+            <div className="settings-field">
+              <label htmlFor="email">Email Address</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                placeholder="Enter your email"
+              />
+            </div>
+          </div>
+
+          <div className="settings-section">
+            <h3 className="settings-section-title">Change Password</h3>
+
+            <div className="settings-field">
+              <label htmlFor="currentPassword">Current Password</label>
+              <input
+                type="password"
+                id="currentPassword"
+                name="currentPassword"
+                value={formData.currentPassword}
+                onChange={handleChange}
+                placeholder="••••••••"
+              />
+            </div>
+
+            <div className="settings-field">
+              <label htmlFor="newPassword">New Password</label>
+              <input
+                type="password"
+                id="newPassword"
+                name="newPassword"
+                value={formData.newPassword}
+                onChange={handleChange}
+                placeholder="••••••••"
+              />
+            </div>
+
+            <div className="settings-field">
+              <label htmlFor="confirmPassword">Confirm New Password</label>
+              <input
+                type="password"
+                id="confirmPassword"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="••••••••"
+              />
+            </div>
+          </div>
+
+          <button type="submit" className="settings-save" disabled={isSubmitting}>
+            {isSubmitting ? 'Saving...' : 'Save Changes'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 };
 
 export default Settings;
