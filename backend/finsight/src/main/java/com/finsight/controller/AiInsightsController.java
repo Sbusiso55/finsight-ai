@@ -30,4 +30,15 @@ public class AiInsightsController {
     public ResponseEntity<?> askAi(@RequestBody Map<String, Object> request) {
         return ResponseEntity.ok(aiInsightsService.askAi(request));
     }
+
+    @GetMapping("/health")
+    public ResponseEntity<Map<String, String>> checkHealth() {
+        Map<String, String> health = aiInsightsService.checkAiHealth();
+
+        if ("UP".equals(health.get("status"))) {
+            return ResponseEntity.ok(health);
+        }
+
+        return ResponseEntity.status(503).body(health);
+    }
 }

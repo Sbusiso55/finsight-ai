@@ -1,3 +1,4 @@
+
 package com.finsight.config;
 
 // Defines which endpoints are public vs protected and registers the JWT filter
@@ -43,7 +44,8 @@ public class SecurityConfig {
                                 "/error",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/v3/api-docs/**"
+                                "/v3/api-docs/**",
+                                "/api/ai/health"
                         ).permitAll()
                         .anyRequest().authenticated())
                 .httpBasic(basic -> basic.disable())

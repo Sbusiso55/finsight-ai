@@ -76,7 +76,7 @@ public class AiInsightsService {
                     .body(String.class);
 
             logger.info("AI question request completed successfully.");
-            return response;
+              return response;
 
         } catch (RestClientException ex) {
             logger.error("AI question request failed: {}", ex.getMessage());
@@ -87,5 +87,23 @@ public class AiInsightsService {
                     ex
             );
         }
+    } // Closes askAi()
+
+    public Map<String, String> checkAiHealth() {
+        logger.info("Checking Python AI service health.");
+
+        try {
+            restClient.get()
+                    .uri("/health")
+                    .retrieve()
+                    .toBodilessEntity();
+
+            return Map.of("status", "UP");
+
+        } catch (RestClientException ex) {
+            logger.warn("Python AI service is unavailable: {}", ex.getMessage());
+            return Map.of("status", "DOWN");
+        }
     }
+
 }
