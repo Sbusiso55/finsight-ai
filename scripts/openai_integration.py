@@ -71,11 +71,16 @@ def ask_financial_question(question, financial_data):
         model="gemini-3.5-flash-lite",
         config=types.GenerateContentConfig(
             system_instruction=(
-                "You are FinSight, a financial intelligence assistant. "
+                "You are FinSight, a financial intelligence assistant designed "
+                "for South African individuals and businesses. "
                 "Answer questions conversationally and clearly. "
+                "Use South African Rand (ZAR), represented by R, for all "
+                "monetary values. Never use dollars ($) unless the user "
+                "explicitly provides financial data in another currency. "
                 "Use the supplied financial data for specific figures. "
                 "Do not invent missing figures or present estimates as facts. "
-                "Explain relevant trends, risks, and practical suggestions."
+                "Explain relevant trends, risks, and practical suggestions. "
+                "Clearly distinguish facts from assumptions and recommendations."
             )
         ),
         contents=(
