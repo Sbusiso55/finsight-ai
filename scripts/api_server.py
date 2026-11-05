@@ -1,5 +1,12 @@
 
-from fastapi import FastAPI, HTTPException
+import logging
+import time
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from pydantic import BaseModel, Field, field_validator
 
 from scripts.financial_scripts import (
@@ -14,6 +21,80 @@ from scripts.openai_integration import (
 
 app = FastAPI(title="FinSight AI API")
 
+# Server statistics
+START_TIME = time.time()
+total_requests = 0
+
+# Error logging configuration
+logging.basicConfig(
+    filename="api_errors.log",
+    level=logging.ERROR,
+    format="%(asctime)s | %(levelname)s | %(message)s",
+    encoding="utf-8",
+)
+
+logger = logging.getLogger(__name__)
+
+
+# Request Counter Middleware
+@app.middleware("http")
+async def count_requests(request: Request, call_next):
+    global total_requests
+
+    total_requests += 1
+    response = await call_next(request)
+
+    return response
+
+
+# HTTP Exception Handler
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    logger.error(
+        "Endpoint: %s | Status: %s | Error: %s",
+        request.url.path,
+        exc.status_code,
+        exc.detail,
+    )
+
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+        headers=exc.headers,
+    )
+
+
+# Request Validation Error Handler
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.error(
+        "Endpoint: %s | Validation Error: %s",
+        request.url.path,
+        exc.errors(),
+    )
+
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors()},
+    )
+
+
+# Request Validation Error Handler
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.error(
+        "Endpoint: %s | Validation Error: %s",
+        request.url.path,
+        exc.errors(),
+    )
+
+    return JSONResponse(
+        status_code=422,
+        content=jsonable_encoder(
+            {"detail": exc.errors()},
+            custom_encoder={ValueError: str},
+        ),
+    )
 
 # Financial Analysis Request
 class FinancialAnalysisRequest(BaseModel):
@@ -45,6 +126,18 @@ class ForecastRequest(BaseModel):
 @app.get("/health")
 def health_check():
     return {"status": "UP"}
+
+
+# API Status Endpoint
+@app.get("/api/status")
+def api_status():
+    uptime = time.time() - START_TIME
+
+    return {
+        "status": "UP",
+        "uptime_seconds": round(uptime, 2),
+        "total_requests": total_requests,
+    }
 
 
 # Existing Request Models
@@ -79,13 +172,17 @@ def forecast(request: ForecastRequest):
 
         return {
             "forecast": forecast_value,
-            "range": forecast_range
+            "range": forecast_range,
         }
 
     except Exception as error:
+        logger.exception(
+            "Error in /api/forecast: %s",
+            str(error),
+        )
         raise HTTPException(
             status_code=500,
-            detail=str(error)
+            detail=str(error),
         )
 
 
@@ -98,7 +195,7 @@ def financial_analysis(request: FinancialAnalysisRequest):
         "income": request.income,
         "expenses": request.expenses,
         "profit": profit,
-        "transactions_count": len(request.transactions)
+        "transactions_count": len(request.transactions),
     }
 
 
@@ -120,9 +217,13 @@ def financial_summary(request: FinancialSummaryRequest):
         )
 
     except Exception as error:
+        logger.exception(
+            "Error in /financial-summary: %s",
+            str(error),
+        )
         raise HTTPException(
             status_code=500,
-            detail=str(error)
+            detail=str(error),
         )
 
 
@@ -138,13 +239,21 @@ def ask_ai(request: AskAIRequest):
         return {"answer": answer}
 
     except ValueError as error:
+        logger.exception(
+            "Error in /ask-ai: %s",
+            str(error),
+        )
         raise HTTPException(
             status_code=400,
-            detail=str(error)
+            detail=str(error),
         )
 
     except Exception as error:
+        logger.exception(
+            "Error in /ask-ai: %s",
+            str(error),
+        )
         raise HTTPException(
             status_code=500,
-            detail=str(error)
+            detail=str(error),
         )
