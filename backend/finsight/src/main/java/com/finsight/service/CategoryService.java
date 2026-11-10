@@ -29,6 +29,38 @@ public class CategoryService {
     }
 
     public Category saveCategory(Category category) {
+
+        if (category.getType() == null) {
+            throw new IllegalArgumentException(
+                    "Category type is required."
+            );
+        }
+
+        if (category.getType() == TransactionType.INCOME) {
+
+            if (category.getCostClassification() != null ||
+                    category.getCostBehavior() != null) {
+
+                throw new IllegalArgumentException(
+                        "Income categories cannot have cost classification or cost behavior."
+                );
+            }
+
+        } else if (category.getType() == TransactionType.EXPENSE) {
+
+            if (category.getCostClassification() == null) {
+                throw new IllegalArgumentException(
+                        "Expense categories require a cost classification."
+                );
+            }
+
+            if (category.getCostBehavior() == null) {
+                throw new IllegalArgumentException(
+                        "Expense categories require a cost behavior."
+                );
+            }
+        }
+
         return categoryRepository.save(category);
     }
 
