@@ -1,16 +1,56 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import api from '../api/axiosConfig';
 import './Auth.css';
+
 
 const Signup = () => {
     const navigate = useNavigate();
     const [name, setName] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
-    const handleSignup = (e) => {
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+    const [loading, setLoading] = useState(false);
+
+
+    const handleSignup = async (e) => {
         e.preventDefault();
-        navigate('/dashboard');
+
+        setError('');
+        setSuccess('');
+        setLoading(true);
+
+        try {
+            const response = await api.post('/auth/signup', {
+                fullName: name,
+                email,
+                phoneNumber,
+                password
+            });
+
+            setSuccess(
+                typeof response.data === 'string'
+                    ? response.data
+                    : 'Account created successfully!'
+            );
+
+            // Signup does not return a JWT.
+            // Redirect the user to login.
+            setTimeout(() => navigate('/login'), 2000);
+
+        } catch (err) {
+            setError(
+                err.response?.data?.message ||
+                err.response?.data ||
+                err.message ||
+                'Signup failed. Please try again.'
+            );
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -41,6 +81,16 @@ const Signup = () => {
                         />
                     </div>
                     <div className="auth-field">
+                        <label>Phone Number</label>
+                        <input
+                            type="tel"
+                            placeholder="Enter your phone number"
+                            value={phoneNumber}
+                            onChange={(e) => setPhoneNumber(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div className="auth-field">
                         <label>Password</label>
                         <input
                             type="password"
@@ -50,7 +100,21 @@ const Signup = () => {
                             required
                         />
                     </div>
-                    <button type="submit" className="auth-submit">Create Account</button>
+                    {error && (
+                        <p role="alert">{String(error)}</p>
+                    )}
+
+                    {success && (
+                        <p role="status">{success}</p>
+                    )}
+
+                    <button
+                        type="submit"
+                        className="auth-submit"
+                        disabled={loading}
+                    >
+                        {loading ? 'Creating account...' : 'Create Account'}
+                    </button>
                 </form>
                 <p className="auth-switch">
                     Already have an account? <Link to="/login">Sign In</Link>

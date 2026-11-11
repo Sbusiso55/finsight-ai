@@ -1,15 +1,46 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './Auth.css';
+import api from "../api/axiosConfig";
 
 const Login = () => {
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
-        navigate('/dashboard');
+
+        setError('');
+        setLoading(true);
+
+        try {
+            const response = await api.post('/auth/login', {
+                email,
+                password,
+            });
+
+            const token = response.data.token;
+
+            if (!token) {
+                throw new Error('The server did not return a login token.');
+            }
+
+            localStorage.setItem('token', token);
+
+            navigate('/dashboard');
+        } catch (err) {
+            setError(
+                err.response?.data?.message ||
+                err.response?.data ||
+                err.message ||
+                'Login failed. Please check your details and try again.'
+            );
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -39,7 +70,15 @@ const Login = () => {
                             required
                         />
                     </div>
-                    <button type="submit" className="auth-submit">Sign In</button>
+                    {error && <p role="alert">{String(error)}</p>}
+
+                    <button
+                        type="submit"
+                        className="auth-submit"
+                        disabled={loading}
+                    >
+                        {loading ? 'Signing in...' : 'Sign In'}
+                    </button>
                 </form>
                 <p className="auth-switch">
                     Don't have an account? <Link to="/signup">Sign Up</Link>

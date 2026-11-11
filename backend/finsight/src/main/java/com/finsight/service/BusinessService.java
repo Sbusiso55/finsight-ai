@@ -45,6 +45,14 @@ public class BusinessService {
         return businessRepository.save(business);
     }
 
+    public List<Business> getBusinessesByOwnerEmail(String email) {
+
+        User owner = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return businessRepository.findByOwnerId(owner.getId());
+    }
+
     public void deleteBusiness(Long id) {
         businessRepository.deleteById(id);
     }

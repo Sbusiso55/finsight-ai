@@ -34,11 +34,21 @@ public class CategoryController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Category> update(@PathVariable Long id, @RequestBody Category category) {
+    public ResponseEntity<Category> update(
+            @PathVariable Long id,
+            @RequestBody Category category) {
+
         return categoryService.getCategoryById(id)
                 .map(existing -> {
-                    category.setId(id);
-                    return ResponseEntity.ok(categoryService.saveCategory(category));
+
+                    existing.setName(category.getName());
+                    existing.setType(category.getType());
+                    existing.setCostBehavior(category.getCostBehavior());
+                    existing.setCostClassification(category.getCostClassification());
+
+                    return ResponseEntity.ok(
+                            categoryService.saveCategory(existing)
+                    );
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
