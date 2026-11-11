@@ -1,5 +1,6 @@
 package com.finsight.controller;
 
+import com.finsight.dto.ProfitMarginDTO;
 import com.finsight.service.ProfitMarginService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,23 +17,26 @@ public class ProfitMarginController {
     private ProfitMarginService profitMarginService;
 
     @GetMapping("/gross")
-    public ResponseEntity<BigDecimal> getGrossProfitMargin(
+    public ResponseEntity<ProfitMarginDTO> getGrossProfitMargin(
             @RequestParam BigDecimal totalRevenue,
             @RequestParam BigDecimal costOfGoodsSold) {
-        return ResponseEntity.ok(profitMarginService.calculateGrossProfitMargin(totalRevenue, costOfGoodsSold));
+        return ResponseEntity.ok(ProfitMarginDTO.from("GROSS",
+                profitMarginService.calculateGrossProfitMargin(totalRevenue, costOfGoodsSold)));
     }
 
     @GetMapping("/operating")
-    public ResponseEntity<BigDecimal> getOperatingProfitMargin(
+    public ResponseEntity<ProfitMarginDTO> getOperatingProfitMargin(
             @RequestParam BigDecimal totalRevenue,
             @RequestParam BigDecimal totalExpenses) {
-        return ResponseEntity.ok(profitMarginService.calculateOperatingProfitMargin(totalRevenue, totalExpenses));
+        return ResponseEntity.ok(ProfitMarginDTO.from("OPERATING",
+                profitMarginService.calculateOperatingProfitMargin(totalRevenue, totalExpenses)));
     }
 
     @GetMapping("/net")
-    public ResponseEntity<BigDecimal> getNetProfitMargin(
+    public ResponseEntity<ProfitMarginDTO> getNetProfitMargin(
             @RequestParam BigDecimal totalRevenue,
             @RequestParam BigDecimal totalExpenses) {
-        return ResponseEntity.ok(profitMarginService.calculateNetProfitMargin(totalRevenue, totalExpenses));
+        return ResponseEntity.ok(ProfitMarginDTO.from("NET",
+                profitMarginService.calculateNetProfitMargin(totalRevenue, totalExpenses)));
     }
 }

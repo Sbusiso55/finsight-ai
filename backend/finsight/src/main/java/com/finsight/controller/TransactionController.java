@@ -1,5 +1,6 @@
 package com.finsight.controller;
 
+import com.finsight.dto.TransactionDTO;
 import com.finsight.model.Transaction;
 import com.finsight.service.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,32 +21,34 @@ public class TransactionController {
     private TransactionService transactionService;
 
     @GetMapping
-    public ResponseEntity<Page<Transaction>> getTransactions(
+    public ResponseEntity<Page<TransactionDTO>> getTransactions(
             @RequestParam Long businessId, Pageable pageable) {
-        return ResponseEntity.ok(transactionService.findByBusinessId(businessId, pageable));
+        Page<Transaction> page = transactionService.findByBusinessId(businessId, pageable);
+        return ResponseEntity.ok(page.map(TransactionDTO::from));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Transaction> getTransaction(
+    public ResponseEntity<TransactionDTO> getTransaction(
             @PathVariable Long id, @RequestParam Long businessId) {
         return transactionService.findByIdAndBusinessId(id, businessId)
+                .map(TransactionDTO::from)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<Transaction> createTransaction(@RequestBody Transaction transaction) {
-        return ResponseEntity.ok(transactionService.save(transaction));
+    public ResponseEntity<TransactionDTO> createTransaction(@RequestBody Transaction transaction) {
+        return ResponseEntity.ok(TransactionDTO.from(transactionService.save(transaction)));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Transaction> updateTransaction(
+    public ResponseEntity<TransactionDTO> updateTransaction(
             @PathVariable Long id, @RequestParam Long businessId,
             @RequestBody Transaction transaction) {
         return transactionService.findByIdAndBusinessId(id, businessId)
                 .map(existing -> {
                     transaction.setId(id);
-                    return ResponseEntity.ok(transactionService.save(transaction));
+                    return ResponseEntity.ok(TransactionDTO.from(transactionService.save(transaction)));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

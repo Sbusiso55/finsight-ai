@@ -1,6 +1,7 @@
 
 package com.finsight.controller;
 
+import com.finsight.dto.CategoryDTO;
 import com.finsight.model.Category;
 import com.finsight.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,28 +18,32 @@ public class CategoryController {
     private CategoryService categoryService;
 
     @GetMapping("/business/{businessId}")
-    public ResponseEntity<List<Category>> getByBusiness(@PathVariable Long businessId) {
-        return ResponseEntity.ok(categoryService.getCategoriesByBusiness(businessId));
+    public ResponseEntity<List<CategoryDTO>> getByBusiness(@PathVariable Long businessId) {
+        return ResponseEntity.ok(
+                categoryService.getCategoriesByBusiness(businessId).stream()
+                        .map(CategoryDTO::from)
+                        .toList());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Category> getById(@PathVariable Long id) {
+    public ResponseEntity<CategoryDTO> getById(@PathVariable Long id) {
         return categoryService.getCategoryById(id)
+                .map(CategoryDTO::from)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<Category> create(@RequestBody Category category) {
-        return ResponseEntity.ok(categoryService.saveCategory(category));
+    public ResponseEntity<CategoryDTO> create(@RequestBody Category category) {
+        return ResponseEntity.ok(CategoryDTO.from(categoryService.saveCategory(category)));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Category> update(@PathVariable Long id, @RequestBody Category category) {
+    public ResponseEntity<CategoryDTO> update(@PathVariable Long id, @RequestBody Category category) {
         return categoryService.getCategoryById(id)
                 .map(existing -> {
                     category.setId(id);
-                    return ResponseEntity.ok(categoryService.saveCategory(category));
+                    return ResponseEntity.ok(CategoryDTO.from(categoryService.saveCategory(category)));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
