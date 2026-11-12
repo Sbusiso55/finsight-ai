@@ -4,8 +4,6 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.springframework.boot</groupId>
-
-~~~artifact_preview_35bb9936-591b-4505-b504-2519df62aac1
 spring-boot-starter-parent</artifactId>
 		<version>4.1.1</version>
 		<relativePath/>
@@ -15,11 +13,9 @@ spring-boot-starter-parent</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>finsight</name>
 	<description>AI-powered financial intelligence platform</description>
-
 	<properties>
 		<java.version>17</java.version>
 	</properties>
-
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -82,7 +78,6 @@ spring-boot-starter-parent</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
 	<build>
 		<plugins>
 			<plugin>
@@ -112,5 +107,4 @@ spring-boot-starter-parent</artifactId>
 			</plugin>
 		</plugins>
 	</build>
-
 </project>
