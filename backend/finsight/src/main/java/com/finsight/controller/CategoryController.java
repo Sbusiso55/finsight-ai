@@ -1,4 +1,3 @@
-
 package com.finsight.controller;
 
 import com.finsight.dto.CategoryDTO;
@@ -39,7 +38,6 @@ public class CategoryController {
     }
 
     @PutMapping("/{id}")
-@PutMapping("/{id}")
 public ResponseEntity<CategoryDTO> update(
         @PathVariable Long id,
         @RequestBody Category category) {
