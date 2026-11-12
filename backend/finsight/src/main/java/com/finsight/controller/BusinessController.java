@@ -1,5 +1,6 @@
 package com.finsight.controller;
 
+import com.finsight.dto.BusinessDTO;
 import com.finsight.model.Business;
 import com.finsight.service.BusinessService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,8 +19,11 @@ public class BusinessController {
     private BusinessService businessService;
 
     @GetMapping("/owner/{ownerId}")
-    public ResponseEntity<List<Business>> getByOwner(@PathVariable Long ownerId) {
-        return ResponseEntity.ok(businessService.getBusinessesByOwner(ownerId));
+    public ResponseEntity<List<BusinessDTO>> getByOwner(@PathVariable Long ownerId) {
+        return ResponseEntity.ok(
+                businessService.getBusinessesByOwner(ownerId).stream()
+                        .map(BusinessDTO::from)
+                        .toList());
     }
 
     @GetMapping("/owner")
@@ -35,37 +39,38 @@ public class BusinessController {
     }
 
     @GetMapping("/accessible/{userId}")
-    public ResponseEntity<List<Business>> getAccessible(@PathVariable Long userId) {
-        return ResponseEntity.ok(businessService.getAccessibleBusinesses(userId));
+    public ResponseEntity<List<BusinessDTO>> getAccessible(@PathVariable Long userId) {
+        return ResponseEntity.ok(
+                businessService.getAccessibleBusinesses(userId).stream()
+                        .map(BusinessDTO::from)
+                        .toList());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Business> getById(@PathVariable Long id) {
+    public ResponseEntity<BusinessDTO> getById(@PathVariable Long id) {
         return businessService.getBusinessById(id)
+                .map(BusinessDTO::from)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
 
     @PostMapping
-    public ResponseEntity<Business> create(
+    public ResponseEntity<BusinessDTO> create(
             @RequestBody Business business,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        Business savedBusiness = businessService.saveBusiness(
-                business,
-                userDetails.getUsername()
-        );
-
-        return ResponseEntity.ok(savedBusiness);
+        Business savedBusiness = businessService.saveBusiness(business, userDetails.getUsername());
+        return ResponseEntity.ok(BusinessDTO.from(savedBusiness));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Business> update(@PathVariable Long id, @RequestBody Business business) {
+    public ResponseEntity<BusinessDTO> update(@PathVariable Long id, @RequestBody Business business) {
         return businessService.getBusinessById(id)
                 .map(existing -> {
                     business.setId(id);
-                    return ResponseEntity.ok(businessService.saveBusiness(business, business.getOwner().getEmail()));
+                    Business saved = businessService.saveBusiness(business, business.getOwner().getEmail());
+                    return ResponseEntity.ok(BusinessDTO.from(saved));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
