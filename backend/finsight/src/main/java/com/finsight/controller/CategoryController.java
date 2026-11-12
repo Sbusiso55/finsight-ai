@@ -39,14 +39,25 @@ public class CategoryController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CategoryDTO> update(@PathVariable Long id, @RequestBody Category category) {
-        return categoryService.getCategoryById(id)
-                .map(existing -> {
-                    category.setId(id);
-                    return ResponseEntity.ok(CategoryDTO.from(categoryService.saveCategory(category)));
-                })
-                .orElse(ResponseEntity.notFound().build());
-    }
+@PutMapping("/{id}")
+public ResponseEntity<CategoryDTO> update(
+        @PathVariable Long id,
+        @RequestBody Category category) {
+
+    return categoryService.getCategoryById(id)
+            .map(existing -> {
+
+                existing.setName(category.getName());
+                existing.setType(category.getType());
+                existing.setCostBehavior(category.getCostBehavior());
+                existing.setCostClassification(category.getCostClassification());
+
+                return ResponseEntity.ok(
+                        CategoryDTO.from(categoryService.saveCategory(existing))
+                );
+            })
+            .orElse(ResponseEntity.notFound().build());
+}
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {

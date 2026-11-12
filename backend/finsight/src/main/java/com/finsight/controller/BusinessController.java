@@ -26,6 +26,18 @@ public class BusinessController {
                         .toList());
     }
 
+    @GetMapping("/owner")
+    public ResponseEntity<List<Business>> getMyBusinesses(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        List<Business> businesses =
+                businessService.getBusinessesByOwnerEmail(
+                        userDetails.getUsername()
+                );
+
+        return ResponseEntity.ok(businesses);
+    }
+
     @GetMapping("/accessible/{userId}")
     public ResponseEntity<List<BusinessDTO>> getAccessible(@PathVariable Long userId) {
         return ResponseEntity.ok(
@@ -42,10 +54,6 @@ public class BusinessController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-//    @PostMapping
-//    public ResponseEntity<Business> create(@RequestBody Business business) {
-//        return ResponseEntity.ok(businessService.saveBusiness(business));
-//    }
 
     @PostMapping
     public ResponseEntity<BusinessDTO> create(
