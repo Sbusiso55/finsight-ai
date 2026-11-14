@@ -71,5 +71,15 @@ public class CategoryService {
     public boolean categoryExists(Long businessId, String name) {
         return categoryRepository.existsByBusinessIdAndNameIgnoreCase(businessId, name);
     }
+
+    public Optional<Category> getCategoryByIdAndBusinessId(
+            Long categoryId,
+            Long businessId) {
+
+        return categoryRepository.findByIdAndBusiness_Id(
+                categoryId,
+                businessId
+        );
+    }
 }
 

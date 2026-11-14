@@ -4,6 +4,74 @@ import Navbar from '../components/Navbar';
 import api from '../api/axiosConfig';
 import './Dashboard.css';
 
+// Returns the current month in YYYY-MM format.
+const getCurrentPeriodKey = () => {
+    const today = new Date();
+
+    return `${today.getFullYear()}-${String(
+        today.getMonth() + 1
+    ).padStart(2, '0')}`;
+};
+
+
+// Creates the available reporting periods.
+// Shows the current month and the previous three months.
+const getReportingPeriodOptions = () => {
+    const today = new Date();
+
+    return Array.from({ length: 4 }, (_, index) => {
+        const date = new Date(
+            today.getFullYear(),
+            today.getMonth() - index,
+            1
+        );
+
+        const value = `${date.getFullYear()}-${String(
+            date.getMonth() + 1
+        ).padStart(2, '0')}`;
+
+        return {
+            value,
+            label: index === 0
+                ? 'This month'
+                : date.toLocaleDateString('en-ZA', {
+                    month: 'long',
+                    year: 'numeric'
+                })
+        };
+    });
+};
+
+
+// Converts the selected month into API date parameters.
+const getReportingDateRange = (periodKey) => {
+    const [year, month] = periodKey.split('-').map(Number);
+
+    const today = new Date();
+
+    const fromDate = new Date(year, month - 1, 1);
+
+    const isCurrentMonth =
+        year === today.getFullYear() &&
+        month - 1 === today.getMonth();
+
+    const toDate = isCurrentMonth
+        ? today
+        : new Date(year, month, 0);
+
+    const formatDate = (date) =>
+        `${date.getFullYear()}-${String(
+            date.getMonth() + 1
+        ).padStart(2, '0')}-${String(
+            date.getDate()
+        ).padStart(2, '0')}`;
+
+    return {
+        from: formatDate(fromDate),
+        to: formatDate(toDate)
+    };
+};
+
 const Dashboard = () => {
     const navigate = useNavigate();
 
@@ -17,6 +85,9 @@ const Dashboard = () => {
     const [financialData, setFinancialData] = useState(null);
     const [financialLoading, setFinancialLoading] = useState(false);
     const [financialError, setFinancialError] = useState(false);
+    const [selectedPeriod, setSelectedPeriod] = useState(
+        getCurrentPeriodKey
+    );
 
     const currentBusiness = businesses.find(
         business => business.id === selectedBusinessId
@@ -74,15 +145,7 @@ const Dashboard = () => {
             setFinancialError(false);
             setFinancialData(null);
 
-            const today = new Date();
-
-            const formatDate = (date) =>
-                `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-
-            const from = formatDate(
-                new Date(today.getFullYear(), today.getMonth(), 1)
-            );
-            const to = formatDate(today);
+            const { from, to } = getReportingDateRange(selectedPeriod);
 
             try {
                 const [
@@ -127,11 +190,22 @@ const Dashboard = () => {
                     });
 
                     console.log('Dashboard financial data:', {
+                        businessId: selectedBusinessId,
+                        businessName: businesses.find(
+                            business => business.id === selectedBusinessId
+                        )?.name,
+
+                        reportingPeriod: {
+                            from,
+                            to
+                        },
+
                         revenue: revenue.data,
                         expenses: expenses.data,
                         netProfitMargin: netProfitMargin.data,
                         expenseBreakdown: expenseBreakdown.data,
-                        transactions: transactions.data
+
+                        transactionCount: transactions.data?.content?.length
                     });
                 }
 
@@ -152,7 +226,7 @@ const Dashboard = () => {
         return () => {
             ignore = true;
         };
-    }, [selectedBusinessId]);
+    }, [selectedBusinessId, selectedPeriod]);
 
 // Format financial amounts using the business currency
     const formatCurrency = (amount) =>
@@ -168,7 +242,23 @@ const Dashboard = () => {
             <div className="dashboard-content">
 
                 <div className="dashboard-header">
+                    <div className="dashboard-period-selector">
+                        <label htmlFor="reporting-period">
+                            Reporting Period
+                        </label>
 
+                        <select
+                            id="reporting-period"
+                            value={selectedPeriod}
+                            onChange={(e) => setSelectedPeriod(e.target.value)}
+                        >
+                            {getReportingPeriodOptions().map(period => (
+                                <option key={period.value} value={period.value}>
+                                    {period.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                     <div>
                         <p className="dashboard-greeting">
                             Good evening, {user ? user.fullName : '...'}
@@ -317,34 +407,43 @@ const Dashboard = () => {
 
                     </div>
 
-
                     {financialLoading ? (
                         <p>Loading expense breakdown...</p>
                     ) : financialError ? (
                         <p>Unable to load expense breakdown.</p>
                     ) : Object.entries(financialData?.expenseBreakdown || {}).length > 0 ? (
                         Object.entries(financialData.expenseBreakdown).map(
-                            ([category, percentage]) => {
-                                const amount =
-                                    Number(financialData.expenses) *
-                                    Number(percentage) / 100;
+                            ([category, rawAmount]) => {
+
+                                const amount = Number(rawAmount) || 0;
+                                const totalExpenses = Number(financialData.expenses) || 0;
+
+                                // Calculate this category's share of total expenses.
+                                const percentage = totalExpenses > 0
+                                    ? (amount / totalExpenses) * 100
+                                    : 0;
 
                                 return (
                                     <div className="expense-bar-item" key={category}>
+
                                         <div className="expense-bar-info">
                                             <span>{category}</span>
+
                                             <span>
                             {formatCurrency(amount)} (
-                                                {Number(percentage).toFixed(2)}%)
+                                                {percentage.toFixed(2)}%)
                         </span>
                                         </div>
 
                                         <div className="expense-bar-track">
                                             <div
                                                 className="expense-bar-fill"
-                                                style={{ width: `${percentage}%` }}
-                                            ></div>
+                                                style={{
+                                                    width: `${Math.min(100, Math.max(0, percentage))}%`
+                                                }}
+                                            />
                                         </div>
+
                                     </div>
                                 );
                             }

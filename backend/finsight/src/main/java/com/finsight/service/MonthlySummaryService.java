@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,15 +27,20 @@ public class MonthlySummaryService {
         BigDecimal netProfit = totalRevenue.subtract(totalExpenses);
         BigDecimal closingBalance = openingBalance.add(netProfit);
 
-        BigDecimal grossMargin = BigDecimal.ZERO;
-        BigDecimal netMargin = BigDecimal.ZERO;
-        if (totalRevenue.compareTo(BigDecimal.ZERO) != 0) {
-            grossMargin = totalRevenue.subtract(totalExpenses)
-                    .multiply(new BigDecimal("100"))
-                    .divide(totalRevenue, 2, RoundingMode.HALF_UP);
-            netMargin = netProfit.multiply(new BigDecimal("100"))
-                    .divide(totalRevenue, 2, RoundingMode.HALF_UP);
-        }
+        BigDecimal costOfGoodsSold =
+                transactionService.getCostOfGoodsSold(
+                        businessId, from, to
+                );
+
+        BigDecimal grossMargin =
+                profitMarginService.calculateGrossProfitMargin(
+                        totalRevenue, costOfGoodsSold
+                );
+
+        BigDecimal netMargin =
+                profitMarginService.calculateNetProfitMargin(
+                        totalRevenue, totalExpenses
+                );
 
         Map<String, Object> summary = new HashMap<>();
         summary.put("totalRevenue", totalRevenue);

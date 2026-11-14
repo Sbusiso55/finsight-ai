@@ -1,6 +1,7 @@
 package com.finsight.repository;
 
 import com.finsight.model.Transaction;
+import com.finsight.model.enums.CostClassification;
 import com.finsight.model.enums.TransactionType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -101,13 +102,15 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
                                  @Param("to") LocalDate to);
 
     @Query("""
-            select coalesce(sum(t.amount), 0) from Transaction t
-            where t.business.id = :businessId and t.type = com.finsight.model.enums.TransactionType.EXPENSE
-              and t.category.costClassification = :classification
-              and t.transactionDate between :from and :to
-            """)
-    BigDecimal sumByCostClassification(@Param("businessId") Long businessId,
-                                       @Param("classification") com.finsight.model.enums.CostClassification classification,
-                                       @Param("from") LocalDate from,
-                                       @Param("to") LocalDate to);
+        select coalesce(sum(t.amount), 0) from Transaction t
+        where t.business.id = :businessId
+          and t.type = com.finsight.model.enums.TransactionType.EXPENSE
+          and t.category.costClassification = :classification
+          and t.transactionDate between :from and :to
+        """)
+    BigDecimal sumByCostClassification(
+            @Param("businessId") Long businessId,
+            @Param("classification") CostClassification classification,
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
 }

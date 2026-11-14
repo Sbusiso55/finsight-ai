@@ -9,13 +9,13 @@ import java.util.Optional;
 
 /** Database access for transaction categories. */
 public interface CategoryRepository extends JpaRepository<Category, Long> {
-
     List<Category> findByBusinessIdOrderByName(Long businessId);
-
     List<Category> findByBusinessIdAndType(Long businessId, TransactionType type);
-
     /** Used by CSV/bank-statement import to match a row to an existing category. */
     Optional<Category> findByBusinessIdAndNameIgnoreCase(Long businessId, String name);
-
     boolean existsByBusinessIdAndNameIgnoreCase(Long businessId, String name);
+    Optional<Category> findByIdAndBusiness_Id(
+            Long categoryId,
+            Long businessId
+    );
 }
