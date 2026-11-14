@@ -117,3 +117,24 @@
         padding: 24px;
     }
 }
+
+/* Status alerts (not in the original CSS; styled to match the palette) */
+.settings-alert {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin-bottom: 24px;
+}
+
+.settings-alert.error {
+    background: rgba(214, 110, 100, 0.12);
+    border: 1px solid rgba(214, 110, 100, 0.4);
+    color: #e0877d;
+}
+
+.settings-alert.success {
+    background: rgba(201, 169, 110, 0.12);
+    border: 1px solid rgba(201, 169, 110, 0.4);
+    color: #c9a96e;
+}

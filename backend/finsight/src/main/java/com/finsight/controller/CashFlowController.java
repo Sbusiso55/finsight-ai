@@ -1,6 +1,7 @@
 
 package com.finsight.controller;
 
+import com.finsight.dto.CashFlowDTO;
 import com.finsight.service.CashFlowService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -17,10 +18,11 @@ public class CashFlowController {
     private CashFlowService cashFlowService;
 
     @GetMapping("/summary")
-    public ResponseEntity<Map<String, BigDecimal>> getCashFlowSummary(
+    public ResponseEntity<CashFlowDTO> getCashFlowSummary(
             @RequestParam BigDecimal openingBalance,
             @RequestParam BigDecimal totalRevenue,
             @RequestParam BigDecimal totalExpenses) {
-        return ResponseEntity.ok(cashFlowService.calculateCashFlow(openingBalance, totalRevenue, totalExpenses));
+        return ResponseEntity.ok(CashFlowDTO.from(
+                cashFlowService.calculateCashFlow(openingBalance, totalRevenue, totalExpenses)));
     }
 }

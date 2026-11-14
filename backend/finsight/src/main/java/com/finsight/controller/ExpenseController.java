@@ -2,6 +2,7 @@
 
 package com.finsight.controller;
 
+import com.finsight.dto.ExpenseReportDTO;
 import com.finsight.service.ExpenseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -60,11 +61,11 @@ public class ExpenseController {
     }
 
     @GetMapping("/report")
-    public ResponseEntity<Map<String, Object>> getExpenseReport(
+    public ResponseEntity<ExpenseReportDTO> getExpenseReport(
             @RequestParam Long businessId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        return ResponseEntity.ok(expenseService.generateExpenseReport(businessId, from, to));
+        return ResponseEntity.ok(ExpenseReportDTO.from(expenseService.generateExpenseReport(businessId, from, to)));
     }
 }
 

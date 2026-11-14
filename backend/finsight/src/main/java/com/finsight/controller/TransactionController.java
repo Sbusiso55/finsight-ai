@@ -98,16 +98,8 @@ public class TransactionController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTransaction(
-            @PathVariable Long id,
-            @RequestParam Long businessId) {
-
-        if (transactionService.findByIdAndBusinessId(id, businessId).isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
+    public ResponseEntity<Void> deleteTransaction(@PathVariable Long id) {
         transactionService.deleteById(id);
-
         return ResponseEntity.noContent().build();
     }
 
