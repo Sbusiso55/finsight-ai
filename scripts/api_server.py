@@ -1,4 +1,7 @@
-
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
 import logging
 import time
 
@@ -18,9 +21,22 @@ from scripts.openai_integration import (
     build_financial_summary,
     ask_financial_question,
 )
+app = FastAPI(
+    title="FinSight AI API",
+    description="API for financial analysis, forecasting, and AI-powered financial insights.",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
+# Rate Limiting Configuration
+limiter = Limiter(key_func=get_remote_address)
 
-app = FastAPI(title="FinSight AI API")
-
+app.state.limiter = limiter
+app.add_exception_handler(
+    RateLimitExceeded,
+    _rate_limit_exceeded_handler,
+)
+app.add_middleware(SlowAPIMiddleware)
 # Server statistics
 START_TIME = time.time()
 total_requests = 0
@@ -145,13 +161,28 @@ class AskAIRequest(BaseModel):
     question: str
     financial_data: dict
 
-
 # Forecast Endpoint
-@app.post("/api/forecast")
-def forecast(request: ForecastRequest):
+@app.post(
+    "/api/forecast",
+    summary="Forecast next month's revenue",
+    description=(
+        "Uses at least three months of historical financial values "
+        "to predict next month's value and calculate an estimated range. "
+        "Limited to 10 requests per minute per IP address."
+    ),
+    response_description="Predicted value and estimated forecast range.",
+    responses={
+        200: {"description": "Forecast generated successfully."},
+        422: {"description": "Invalid input or insufficient historical data."},
+        429: {"description": "Rate limit exceeded. Maximum 10 requests per minute."},
+        500: {"description": "An internal error occurred while generating the forecast."},
+    },
+)
+@limiter.limit("10/minute")
+def forecast(request: Request, data: ForecastRequest):
     try:
         forecast_value = forecast_next_month(
-            request.historical_values
+            data.historical_values
         )
 
         forecast_range = calculate_forecast_range(
@@ -172,36 +203,66 @@ def forecast(request: ForecastRequest):
             status_code=500,
             detail=str(error),
         )
-
-
 # Financial Analysis Endpoint
-@app.post("/api/financial-analysis")
-def financial_analysis(request: FinancialAnalysisRequest):
-    profit = request.income - request.expenses
+@app.post(
+    "/api/financial-analysis",
+    summary="Analyse business financial performance",
+    description=(
+        "Calculates profit by subtracting expenses from income "
+        "and returns the number of transactions provided. "
+        "Limited to 20 requests per minute per IP address."
+    ),
+    response_description="Income, expenses, calculated profit and transaction count.",
+    responses={
+        200: {"description": "Financial analysis completed successfully."},
+        422: {"description": "Invalid financial data or empty transactions list."},
+        429: {"description": "Rate limit exceeded. Maximum 20 requests per minute."},
+    },
+)
+@limiter.limit("20/minute")
+def financial_analysis(request: Request, data: FinancialAnalysisRequest):
+    profit = data.income - data.expenses
 
     return {
-        "income": request.income,
-        "expenses": request.expenses,
+        "income": data.income,
+        "expenses": data.expenses,
         "profit": profit,
-        "transactions_count": len(request.transactions),
+        "transactions_count": len(data.transactions),
     }
 
 
 # Existing Financial Summary Endpoint
-@app.post("/financial-summary")
-def financial_summary(request: FinancialSummaryRequest):
+@app.post(
+    "/financial-summary",
+    summary="Generate a financial summary",
+    description=(
+        "Generates an AI-powered financial summary using revenue "
+        "transactions, expense breakdowns, previous revenue, "
+        "and fixed and variable expenses. "
+        "Limited to 10 requests per minute per IP address."
+    ),
+    response_description="Financial summary and insights generated from the supplied data.",
+    responses={
+        200: {"description": "Financial summary generated successfully."},
+        422: {"description": "Invalid financial summary input."},
+        429: {"description": "Rate limit exceeded. Maximum 10 requests per minute."},
+        500: {"description": "An internal error occurred while generating the summary."},
+    },
+)
+@limiter.limit("10/minute")
+def financial_summary(request: Request, data: FinancialSummaryRequest):
     try:
         revenue_transactions = [
             transaction.model_dump()
-            for transaction in request.revenue_transactions
+            for transaction in data.revenue_transactions
         ]
 
         return build_financial_summary(
             revenue_transactions=revenue_transactions,
-            expense_breakdown=request.expense_breakdown,
-            previous_revenue=request.previous_revenue,
-            total_fixed_expenses=request.total_fixed_expenses,
-            total_variable_expenses=request.total_variable_expenses,
+            expense_breakdown=data.expense_breakdown,
+            previous_revenue=data.previous_revenue,
+            total_fixed_expenses=data.total_fixed_expenses,
+            total_variable_expenses=data.total_variable_expenses,
         )
 
     except Exception as error:
@@ -216,12 +277,29 @@ def financial_summary(request: FinancialSummaryRequest):
 
 
 # Existing AI Question Endpoint
-@app.post("/ask-ai")
-def ask_ai(request: AskAIRequest):
+@app.post(
+    "/ask-ai",
+    summary="Ask AI a financial question",
+    description=(
+        "Accepts a financial question and relevant financial data, "
+        "then returns an AI-generated answer. "
+        "Limited to 5 requests per minute per IP address."
+    ),
+    response_description="AI-generated answer to the financial question.",
+    responses={
+        200: {"description": "AI answer generated successfully."},
+        400: {"description": "The financial question could not be processed."},
+        422: {"description": "Invalid request data."},
+        429: {"description": "Rate limit exceeded. Maximum 5 requests per minute."},
+        500: {"description": "An internal error occurred while generating the answer."},
+    },
+)
+@limiter.limit("5/minute")
+def ask_ai(request: Request, data: AskAIRequest):
     try:
         answer = ask_financial_question(
-            request.question,
-            request.financial_data,
+            data.question,
+            data.financial_data,
         )
 
         return {"answer": answer}
