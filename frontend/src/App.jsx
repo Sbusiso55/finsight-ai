@@ -11,6 +11,7 @@ import AskAI from './pages/AskAI';
 import Settings from './pages/Settings';
 import ComingSoon from './pages/ComingSoon';
 import ProtectedRoute from './components/ProtectedRoute';
+import BusinessSetup from './pages/BusinessSetup';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><ComingSoon title="Profile" /></ProtectedRoute>} />
         <Route path="/notifications" element={<ProtectedRoute><ComingSoon title="Notifications" /></ProtectedRoute>} />
+        <Route path="/business-setup" element={<ProtectedRoute><BusinessSetup /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
