@@ -1,75 +1,110 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
+import api from '../api/axiosConfig';
 import './Reports.css';
 
 const Reports = () => {
-    return (
-        <div className="reports-wrapper">
-            <Navbar />
-            <div className="reports-content">
-                <div className="reports-header">
-                    <h1 className="reports-title">Financial Reports</h1>
-                    <p className="reports-subtitle">Monthly summaries and performance insights.</p>
-                </div>
+  const [businesses, setBusinesses] = useState([]);
+  const [selectedBusinessId, setSelectedBusinessId] = useState(null);
+  const [reportData, setReportData] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-                <div className="reports-grid">
-                    <div className="report-card">
-                        <div className="report-card-header">
-                            <span className="report-month">March 2026</span>
-                            <span className="report-badge">Latest</span>
-                        </div>
-                        <div className="report-stats">
-                            <div className="report-stat">
-                                <p className="report-stat-label">Revenue</p>
-                                <p className="report-stat-value">R30,000</p>
-                            </div>
-                            <div className="report-stat">
-                                <p className="report-stat-label">Expenses</p>
-                                <p className="report-stat-value">R24,800</p>
-                            </div>
-                            <div className="report-stat">
-                                <p className="report-stat-label">Profit</p>
-                                <p className="report-stat-value positive">R5,200</p>
-                            </div>
-                            <div className="report-stat">
-                                <p className="report-stat-label">Margin</p>
-                                <p className="report-stat-value">17.33%</p>
-                            </div>
-                        </div>
-                        <div className="report-insights">
-                            <h4>Key Insights</h4>
-                            <ul>
-                                <li>Revenue grew 20% from February</li>
-                                <li>Staff wages are the largest expense at 36.3%</li>
-                                <li>Fixed costs make up 60% of total expenses</li>
-                                <li>Revenue growth outpacing expense growth</li>
-                            </ul>
-                        </div>
-                    </div>
+  useEffect(() => {
+    let ignore = false;
+    const loadBusinesses = async () => {
+      try {
+        const res = await api.get('/api/businesses/owner');
+        if (!ignore) {
+          const list = Array.isArray(res.data) ? res.data : [];
+          setBusinesses(list);
+          if (list.length > 0) setSelectedBusinessId(list[0].id);
+        }
+      } catch (err) {
+        console.error('Failed to load businesses:', err);
+      }
+    };
+    loadBusinesses();
+    return () => { ignore = true; };
+  }, []);
 
-                    <div className="report-card">
-                        <div className="report-card-header">
-                            <span className="report-month">Forecast — April 2026</span>
-                        </div>
-                        <div className="report-stats">
-                            <div className="report-stat">
-                                <p className="report-stat-label">Projected Revenue</p>
-                                <p className="report-stat-value">R34,000</p>
-                            </div>
-                            <div className="report-stat">
-                                <p className="report-stat-label">Projected Expenses</p>
-                                <p className="report-stat-value">R27,700</p>
-                            </div>
-                            <div className="report-stat">
-                                <p className="report-stat-label">Projected Profit</p>
-                                <p className="report-stat-value positive">R6,300</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+  useEffect(() => {
+    if (!selectedBusinessId) return;
+    let ignore = false;
+    const loadReport = async () => {
+      setLoading(true);
+      const today = new Date();
+      const from = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+      const to = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+      try {
+        const [rev, exp, margin] = await Promise.all([
+          api.get(`/api/revenue/total?businessId=${selectedBusinessId}&from=${from}&to=${to}`),
+          api.get(`/api/expenses/total?businessId=${selectedBusinessId}&from=${from}&to=${to}`),
+          api.get(`/api/profit-margin/net?businessId=${selectedBusinessId}&from=${from}&to=${to}`),
+        ]);
+
+        if (!ignore) {
+          setReportData({
+            revenue: rev.data ?? 0,
+            expenses: exp.data ?? 0,
+            netMargin: margin.data ?? 0,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load report:', err);
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
+    loadReport();
+    return () => { ignore = true; };
+  }, [selectedBusinessId]);
+
+  const formatCurrency = (amount) => {
+    const num = Number(amount) || 0;
+    return `R ${num.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  return (
+    <div className="rep-layout">
+      <Navbar />
+      <main className="rep-container">
+        <div className="rep-header-row">
+          <h1>Financial Reports & Margins</h1>
+          {businesses.length > 1 && (
+            <select
+              className="rep-select"
+              value={selectedBusinessId || ''}
+              onChange={(e) => setSelectedBusinessId(Number(e.target.value))}
+            >
+              {businesses.map((b) => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
+          )}
         </div>
-    );
+
+        {loading ? (
+          <p className="rep-msg">Generating financial telemetry report...</p>
+        ) : (
+          <div className="rep-grid">
+            <div className="rep-card">
+              <span>Total Revenue</span>
+              <h3 className="rep-pos">{formatCurrency(reportData?.revenue)}</h3>
+            </div>
+            <div className="rep-card">
+              <span>Total Expenses</span>
+              <h3 className="rep-neg">{formatCurrency(reportData?.expenses)}</h3>
+            </div>
+            <div className="rep-card">
+              <span>Net Profit Margin</span>
+              <h3>{Number(reportData?.netMargin || 0).toFixed(2)}%</h3>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
 };
 
 export default Reports;

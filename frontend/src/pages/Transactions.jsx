@@ -1,49 +1,101 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
+import api from '../api/axiosConfig';
 import './Transactions.css';
 
 const Transactions = () => {
-    const transactions = [
-        { id: 1, description: 'Customer 001 Payment', amount: 8000, type: 'Income', date: 'Mar 5, 2026' },
-        { id: 2, description: 'Staff Wages', amount: -9000, type: 'Expense', date: 'Mar 1, 2026' },
-        { id: 3, description: "Anita's Retail", amount: 12500, type: 'Income', date: 'Mar 12, 2026' },
-        { id: 4, description: 'Rent Payment', amount: -6000, type: 'Expense', date: 'Mar 1, 2026' },
-        { id: 5, description: 'Customer 002 Payment', amount: 4500, type: 'Income', date: 'Mar 18, 2026' },
-        { id: 6, description: 'Supplies', amount: -4800, type: 'Expense', date: 'Mar 10, 2026' },
-        { id: 7, description: 'Customer 003 Payment', amount: 5000, type: 'Income', date: 'Mar 22, 2026' },
-        { id: 8, description: 'Marketing', amount: -3000, type: 'Expense', date: 'Mar 15, 2026' },
-        { id: 9, description: 'Utilities', amount: -2000, type: 'Expense', date: 'Mar 5, 2026' },
-    ];
+  const [businesses, setBusinesses] = useState([]);
+  const [selectedBusinessId, setSelectedBusinessId] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-    return (
-        <div className="transactions-wrapper">
-            <Navbar />
-            <div className="transactions-content">
-                <div className="transactions-header">
-                    <h1 className="transactions-title">Transactions</h1>
-                    <p className="transactions-subtitle">All your income and expenses in one place.</p>
-                </div>
-                <div className="transactions-table">
-                    <div className="trans-row header">
-                        <span>Description</span>
-                        <span>Amount</span>
-                        <span>Type</span>
-                        <span>Date</span>
-                    </div>
-                    {transactions.map((t) => (
-                        <div className="trans-row" key={t.id}>
-                            <span>{t.description}</span>
-                            <span className={t.amount > 0 ? 'positive' : 'negative'}>
-                                {t.amount > 0 ? '+' : ''}R{Math.abs(t.amount).toLocaleString()}
-                            </span>
-                            <span className={`trans-type ${t.type.toLowerCase()}`}>{t.type}</span>
-                            <span>{t.date}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
+  useEffect(() => {
+    let ignore = false;
+    const loadBusinesses = async () => {
+      try {
+        const res = await api.get('/api/businesses/owner');
+        if (!ignore) {
+          const list = Array.isArray(res.data) ? res.data : [];
+          setBusinesses(list);
+          if (list.length > 0) setSelectedBusinessId(list[0].id);
+        }
+      } catch (err) {
+        console.error('Failed to load businesses:', err);
+      }
+    };
+    loadBusinesses();
+    return () => { ignore = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedBusinessId) return;
+    let ignore = false;
+    const loadTransactions = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get(`/api/transactions?businessId=${selectedBusinessId}&page=0&size=50`);
+        if (!ignore) {
+          setTransactions(res.data?.content || []);
+        }
+      } catch (err) {
+        console.error('Failed to load transactions:', err);
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
+    loadTransactions();
+    return () => { ignore = true; };
+  }, [selectedBusinessId]);
+
+  const formatCurrency = (amount) => {
+    const num = Number(amount) || 0;
+    return `R ${num.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  return (
+    <div className="tx-layout">
+      <Navbar />
+      <main className="tx-container">
+        <div className="tx-header-row">
+          <h1>Transaction Ledger</h1>
+          {businesses.length > 1 && (
+            <select
+              className="tx-select"
+              value={selectedBusinessId || ''}
+              onChange={(e) => setSelectedBusinessId(Number(e.target.value))}
+            >
+              {businesses.map((b) => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
+          )}
         </div>
-    );
+
+        <div className="tx-card">
+          {loading ? (
+            <p className="tx-msg">Loading transactions...</p>
+          ) : transactions.length > 0 ? (
+            transactions.map((tx) => {
+              const isIncome = tx.type === 'INCOME';
+              return (
+                <div className="tx-row" key={tx.id}>
+                  <div>
+                    <h4>{tx.description || 'Untitled Transaction'}</h4>
+                    <p>{tx.categoryName || tx.type} &bull; {tx.transactionDate}</p>
+                  </div>
+                  <div className={isIncome ? 'tx-pos tx-amt' : 'tx-neg tx-amt'}>
+                    {isIncome ? '+' : '-'} {formatCurrency(tx.amount)}
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <p className="tx-msg">No transactions found for this business.</p>
+          )}
+        </div>
+      </main>
+    </div>
+  );
 };
 
 export default Transactions;

@@ -1,91 +1,83 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import './Auth.css';
-import api from "../api/axiosConfig";
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import Logo from '../components/Logo';
+import './Signup.css';
 
 const Login = () => {
-    const navigate = useNavigate();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [pass, setPass] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-    const handleLogin = async (e) => {
-        e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
 
-        setError('');
-        setLoading(true);
+    try {
+      const res = await axios.post('http://localhost:8080/auth/login', {
+        email: email,
+        password: pass,
+      });
+      localStorage.setItem('token', res.data.token);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Invalid email or password');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        try {
-            const response = await api.post('/auth/login', {
-                email,
-                password,
-            });
-
-            const token = response.data.token;
-
-            if (!token) {
-                throw new Error('The server did not return a login token.');
-            }
-
-            localStorage.setItem('token', token);
-
-            navigate('/dashboard');
-        } catch (err) {
-            setError(
-                err.response?.data?.message ||
-                err.response?.data ||
-                err.message ||
-                'Login failed. Please check your details and try again.'
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div className="auth-wrapper">
-            <div className="auth-glow"></div>
-            <div className="auth-container">
-                <h1 className="auth-logo">Fin<span>Sight</span></h1>
-                <p className="auth-subtitle">Welcome back. Sign in to continue.</p>
-                <form className="auth-form" onSubmit={handleLogin}>
-                    <div className="auth-field">
-                        <label>Email</label>
-                        <input
-                            type="email"
-                            placeholder="Enter your email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div className="auth-field">
-                        <label>Password</label>
-                        <input
-                            type="password"
-                            placeholder="Enter your password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                        />
-                    </div>
-                    {error && <p role="alert">{String(error)}</p>}
-
-                    <button
-                        type="submit"
-                        className="auth-submit"
-                        disabled={loading}
-                    >
-                        {loading ? 'Signing in...' : 'Sign In'}
-                    </button>
-                </form>
-                <p className="auth-switch">
-                    Don't have an account? <Link to="/signup">Sign Up</Link>
-                </p>
-            </div>
+  return (
+    <div className="auth-container">
+      <div className="auth-card">
+        <div className="auth-logo-wrapper">
+          <Logo />
         </div>
-    );
+
+        <div className="auth-header">
+          <h2>Welcome back.</h2>
+          <p>Sign in to access your business financial intelligence.</p>
+        </div>
+
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <div className="auth-form-group">
+            <label>Email Address</label>
+            <input
+              type="email"
+              placeholder="kevin@company.co.za"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="auth-form-group">
+            <label>Password</label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              value={pass}
+              onChange={(e) => setPass(e.target.value)}
+              required
+            />
+          </div>
+
+          {error && <p className="auth-error">{error}</p>}
+
+          <button type="submit" className="auth-submit-btn" disabled={loading}>
+            {loading ? 'Signing In...' : 'Sign In'}
+          </button>
+        </form>
+
+        <div className="auth-footer-text">
+          Don't have an account? <a href="/signup">Create Account</a>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default Login;
