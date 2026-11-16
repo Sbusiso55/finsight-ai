@@ -1,362 +1,296 @@
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import api from '../api/axiosConfig';
 import './Dashboard.css';
 
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+};
+
+const toPeriodKey = (date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+const formatDate = (date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+const getPeriodOptions = () => {
+  const today = new Date();
+  return Array.from({ length: 4 }, (_, i) => {
+    const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    return {
+      value: toPeriodKey(date),
+      label: i === 0 ? 'This month' : date.toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' }),
+    };
+  });
+};
+
+const getDateRange = (periodKey) => {
+  const [year, month] = periodKey.split('-').map(Number);
+  const today = new Date();
+  const from = new Date(year, month - 1, 1);
+  const isCurrentMonth = year === today.getFullYear() && month - 1 === today.getMonth();
+  const to = isCurrentMonth ? today : new Date(year, month, 0);
+  return { from: formatDate(from), to: formatDate(to) };
+};
+
+const formatCurrency = (amount) => {
+  const num = Number(amount) || 0;
+  return `R ${num.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
+
 const Dashboard = () => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    // Store the logged-in user's details
-    const [user, setUser] = useState(null);
-    const [businesses, setBusinesses] = useState([]);
-    const [selectedBusinessId, setSelectedBusinessId] = useState(null);
-    const [businessesLoading, setBusinessesLoading] = useState(true);
-    const [businessesError, setBusinessesError] = useState(false);
+  const [user, setUser] = useState(null);
+  const [businesses, setBusinesses] = useState([]);
+  const [businessesLoaded, setBusinessesLoaded] = useState(false);
+  const [selectedBusinessId, setSelectedBusinessId] = useState(null);
+  const [selectedPeriod, setSelectedPeriod] = useState(() => toPeriodKey(new Date()));
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
 
-    const [financialData, setFinancialData] = useState(null);
-    const [financialLoading, setFinancialLoading] = useState(false);
-    const [financialError, setFinancialError] = useState(false);
+  useEffect(() => {
+    let ignore = false;
 
-    const currentBusiness = businesses.find(
-        business => business.id === selectedBusinessId
-    );
+    const loadUserAndBusinesses = async () => {
+      const [userRes, bizRes] = await Promise.allSettled([
+        api.get('/api/users/user'),
+        api.get('/api/businesses/owner'),
+      ]);
+      if (ignore) return;
 
-    // Fetch the logged-in user's details when Dashboard loads
-    useEffect(() => {
-        const fetchUser = async () => {
-            try {
-                const response = await api.get('/api/users/user');
-                setUser(response.data);
-            } catch (error) {
-                console.error('Failed to fetch user:', error);
-            }
-        };
+      if (userRes.status === 'fulfilled') {
+        setUser(userRes.value.data);
+      } else {
+        console.error('Failed to load user:', userRes.reason);
+      }
 
-       void fetchUser();
-    }, []);
+      if (bizRes.status === 'fulfilled') {
+        const list = Array.isArray(bizRes.value.data) ? bizRes.value.data : [];
+        setBusinesses(list);
+        if (list.length > 0) setSelectedBusinessId(list[0].id);
+      } else {
+        console.error('Failed to load businesses:', bizRes.reason);
+      }
 
+      setBusinessesLoaded(true);
+    };
 
-    useEffect(() => {
-        if (!user) return;
+    loadUserAndBusinesses();
+    return () => { ignore = true; };
+  }, []);
 
-        const fetchBusinesses = async () => {
-            try {
-                const response = await api.get('/api/businesses/owner');
+  useEffect(() => {
+    if (!selectedBusinessId) return;
+    let ignore = false;
 
-                setBusinesses(response.data);
+    const loadFinancials = async () => {
+      setLoading(true);
+      setError(false);
+      const { from, to } = getDateRange(selectedPeriod);
+      const q = `businessId=${selectedBusinessId}&from=${from}&to=${to}`;
 
-                if (response.data.length > 0) {
-                    setSelectedBusinessId(response.data[0].id);
-                }
+      try {
+        const [revenueRes, expensesRes, marginRes, breakdownRes, txRes] = await Promise.all([
+          api.get(`/api/revenue/total?${q}`),
+          api.get(`/api/expenses/total?${q}`),
+          api.get(`/api/profit-margin/net?${q}`),
+          api.get(`/api/expenses/breakdown?${q}`),
+          api.get(`/api/transactions?businessId=${selectedBusinessId}&page=0&size=5`),
+        ]);
+        if (ignore) return;
+        setData({
+          revenue: revenueRes.data ?? 0,
+          expenses: expensesRes.data ?? 0,
+          netProfitMargin: marginRes.data ?? 0,
+          expenseBreakdown: breakdownRes.data ?? {},
+          transactions: txRes.data?.content ?? [],
+        });
+      } catch (err) {
+        if (!ignore) {
+          console.error('Error loading dashboard metrics:', err);
+          setError(true);
+        }
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
 
-                console.log('User businesses:', response.data);
+    loadFinancials();
+    return () => { ignore = true; };
+  }, [selectedBusinessId, selectedPeriod]);
 
-            } catch (error) {
-                console.error('Failed to fetch businesses:', error);
-                setBusinessesError(true);
+  const currentBusiness = businesses.find((b) => b.id === selectedBusinessId);
+  const totalExpenses = Number(data?.expenses) || 0;
+  const breakdown = Object.entries(data?.expenseBreakdown || {});
+  const netCashPosition =
+    (Number(currentBusiness?.openingBalance) || 0) + (Number(data?.revenue) || 0) - totalExpenses;
 
-            } finally {
-                setBusinessesLoading(false);
-            }
-        };
+  return (
+    <div className="fnb-dashboard-layout">
+      <Navbar />
 
-        void fetchBusinesses();
-    }, [user]);
+      <main className="fnb-dashboard-container">
+        {businessesLoaded && businesses.length === 0 && (
+          <div className="fnb-panel" style={{ marginBottom: 24 }}>
+            <h2 style={{ fontSize: 17, margin: '0 0 8px 0' }}>Set up your business</h2>
+            <p className="fnb-status-text">
+              You haven't added a business yet. Add one to start tracking your finances.
+            </p>
+          </div>
+        )}
 
-    useEffect(() => {
-        if (!selectedBusinessId) return;
+        <header className="fnb-topbar">
+          <div>
+            <h1 className="fnb-greeting">
+              {getGreeting()}, {user ? user.fullName : 'Entrepreneur'}
+            </h1>
+            <p className="fnb-subgreeting">
+              {currentBusiness ? currentBusiness.name : 'No business selected'} &bull; Live Financial Feed
+            </p>
+          </div>
 
-        let ignore = false;
+          <div className="fnb-controls">
+            {businesses.length > 1 && (
+              <select
+                className="fnb-select"
+                value={selectedBusinessId || ''}
+                onChange={(e) => setSelectedBusinessId(Number(e.target.value))}
+              >
+                {businesses.map((biz) => (
+                  <option key={biz.id} value={biz.id}>{biz.name}</option>
+                ))}
+              </select>
+            )}
 
-        const fetchFinancialData = async () => {
-            setFinancialLoading(true);
-            setFinancialError(false);
-            setFinancialData(null);
+            <select
+              className="fnb-select"
+              value={selectedPeriod}
+              onChange={(e) => setSelectedPeriod(e.target.value)}
+            >
+              {getPeriodOptions().map((p) => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
+            </select>
+          </div>
+        </header>
 
-            const today = new Date();
+        <section className="fnb-account-card">
+          <div>
+            <span className="fnb-account-tag">Net Business Cash Position</span>
+            <div className="fnb-account-balance">{formatCurrency(netCashPosition)}</div>
+            <p className="fnb-account-meta">
+              Opening Balance: {formatCurrency(currentBusiness?.openingBalance)} &bull; Currency:{' '}
+              {currentBusiness?.currency || 'ZAR'}
+            </p>
+          </div>
+          <button className="fnb-primary-cta" onClick={() => navigate('/add-transaction')}>
+            + Record Transaction
+          </button>
+        </section>
 
-            const formatDate = (date) =>
-                `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        <section className="fnb-quick-actions">
+          <button className="fnb-action-tile" onClick={() => navigate('/add-transaction')}>
+            <div className="fnb-action-icon">+</div>
+            <span>Record Entry</span>
+          </button>
+          <button className="fnb-action-tile" onClick={() => navigate('/transactions')}>
+            <div className="fnb-action-icon">&#8644;</div>
+            <span>All Transactions</span>
+          </button>
+          <button className="fnb-action-tile" onClick={() => navigate('/ask-ai')}>
+            <div className="fnb-action-icon">AI</div>
+            <span>Ask FinSight</span>
+          </button>
+          <button className="fnb-action-tile" onClick={() => navigate('/reports')}>
+            <div className="fnb-action-icon">%</div>
+            <span>Reports</span>
+          </button>
+        </section>
 
-            const from = formatDate(
-                new Date(today.getFullYear(), today.getMonth(), 1)
-            );
-            const to = formatDate(today);
+        <section className="fnb-metrics-grid">
+          <div className="fnb-metric-card">
+            <span>Period Revenue</span>
+            <h3 className="fnb-positive">{formatCurrency(data?.revenue)}</h3>
+          </div>
+          <div className="fnb-metric-card">
+            <span>Period Expenses</span>
+            <h3 className="fnb-negative">{formatCurrency(data?.expenses)}</h3>
+          </div>
+          <div className="fnb-metric-card">
+            <span>Net Profit Margin</span>
+            <h3>{Number(data?.netProfitMargin || 0).toFixed(2)}%</h3>
+          </div>
+        </section>
 
-            try {
-                const [
-                    revenue,
-                    expenses,
-                    netProfitMargin,
-                    expenseBreakdown,
-                    transactions
-                ] = await Promise.all([
-                    api.get(`/api/businesses/${selectedBusinessId}/revenue/total`, {
-                        params: { from, to }
-                    }),
-
-                    api.get('/api/expenses/total', {
-                        params: { businessId: selectedBusinessId, from, to }
-                    }),
-
-                    api.get(`/api/businesses/${selectedBusinessId}/revenue/net-profit-margin`, {
-                        params: { from, to }
-                    }),
-
-                    api.get('/api/expenses/breakdown/percentages', {
-                        params: { businessId: selectedBusinessId, from, to }
-                    }),
-
-                    api.get('/api/transactions', {
-                        params: {
-                            businessId: selectedBusinessId,
-                            page: 0,
-                            size: 5
-                        }
-                    })
-                ]);
-
-                if (!ignore) {
-                    setFinancialData({
-                        revenue: revenue.data,
-                        expenses: expenses.data,
-                        netProfitMargin: netProfitMargin.data,
-                        expenseBreakdown: expenseBreakdown.data,
-                        transactions: transactions.data
-                    });
-
-                    console.log('Dashboard financial data:', {
-                        revenue: revenue.data,
-                        expenses: expenses.data,
-                        netProfitMargin: netProfitMargin.data,
-                        expenseBreakdown: expenseBreakdown.data,
-                        transactions: transactions.data
-                    });
-                }
-
-            } catch (error) {
-                if (!ignore) {
-                    console.error('Failed to fetch dashboard data:', error);
-                    setFinancialError(true);
-                }
-            } finally {
-                if (!ignore) {
-                    setFinancialLoading(false);
-                }
-            }
-        };
-
-        void fetchFinancialData();
-
-        return () => {
-            ignore = true;
-        };
-    }, [selectedBusinessId]);
-
-// Format financial amounts using the business currency
-    const formatCurrency = (amount) =>
-        new Intl.NumberFormat('en-ZA', {
-            style: 'currency',
-            currency: currentBusiness?.currency || 'ZAR'
-        }).format(Number(amount || 0));
-
-    return (
-        <div className="dashboard-wrapper">
-            <Navbar />
-
-            <div className="dashboard-content">
-
-                <div className="dashboard-header">
-
-                    <div>
-                        <p className="dashboard-greeting">
-                            Good evening, {user ? user.fullName : '...'}
-                        </p>
-
-                        <h1 className="dashboard-title">
-                            {currentBusiness
-                                ? currentBusiness.name
-                                : 'Welcome back.'}
-                        </h1>
-                        {businessesLoading ? (
-                            <p>Loading your businesses...</p>
-                        ) : businessesError ? (
-                            <p>Unable to load your businesses. Please try again.</p>
-                        ) : businesses.length === 0 ? (
-                            <p>You haven't added a business yet.</p>
-                        ) : businesses.length > 1 && (
-                            <select
-                                value={selectedBusinessId ?? ''}
-                                onChange={(e) =>
-                                    setSelectedBusinessId(Number(e.target.value))
-                                }
-                            >
-                                {businesses.map(business => (
-                                    <option key={business.id} value={business.id}>
-                                        {business.name}
-                                    </option>
-                                ))}
-                            </select>
-                        )}
-                    </div>
-
-                    <button
-                        className="dashboard-add-btn"
-                        onClick={() => navigate('/add-transaction')}
-                    >
-                        + Add Transaction
-                    </button>
-                </div>
-
-                <div className="dashboard-cards">
-                    <div className="dash-card">
-                        <p className="dash-card-label">Total Revenue</p>
-                        <h2 className="dash-card-value">
-                            {financialLoading
-                                ? 'Loading...'
-                                : financialError
-                                    ? 'Unavailable'
-                                    : formatCurrency(financialData?.revenue)}
-                        </h2>
-                        <p className="dash-card-change positive">
-                            Revenue this month
-                        </p>
-                    </div>
-
-                    <div className="dash-card">
-                        <p className="dash-card-label">Total Expenses</p>
-                        <h2 className="dash-card-value">
-                            {financialLoading
-                                ? 'Loading...'
-                                : financialError
-                                    ? 'Unavailable'
-                                    : formatCurrency(financialData?.expenses)}
-                        </h2>
-                        <p className="dash-card-change negative">
-                            Expenses this month
-                        </p>
-                    </div>
-
-
-                    <div className="dash-card">
-                        <p className="dash-card-label">Net Profit</p>
-                        <h2 className="dash-card-value">
-                            {financialLoading
-                                ? 'Loading...'
-                                : financialError
-                                    ? 'Unavailable'
-                                    : formatCurrency(
-                                        Number(financialData?.revenue || 0) -
-                                        Number(financialData?.expenses || 0)
-                                    )}
-                        </h2>
-                        <p className="dash-card-change positive">
-                            {financialData
-                                ? `${Number(financialData.netProfitMargin).toFixed(2)}% margin`
-                                : 'Net profit margin'}
-                        </p>
-                    </div>
-                </div>
-
-                <div className="dashboard-sections">
-                    <div className="dash-section">
-                        <h3 className="dash-section-title">
-                            Recent Transactions
-                        </h3>
-
-
-                        <div className="dash-table">
-                            <div className="dash-row header">
-                                <span>Description</span>
-                                <span>Amount</span>
-                                <span>Type</span>
-                                <span>Date</span>
-                            </div>
-
-
-                            {financialLoading ? (
-                                <p>Loading transactions...</p>
-                            ) : financialError ? (
-                                <p>Unable to load transactions.</p>
-                            ) : financialData?.transactions?.content?.length > 0 ? (
-                                financialData.transactions.content.map(transaction => (
-                                    <div className="dash-row" key={transaction.id}>
-            <span>
-                {transaction.description || 'No description'}
-            </span>
-
-                                        <span className={
-                                            transaction.type === 'INCOME'
-                                                ? 'positive'
-                                                : 'negative'
-                                        }>
-                {transaction.type === 'INCOME' ? '+' : '-'}
-                                            {formatCurrency(transaction.amount)}
-            </span>
-
-                                        <span>
-                {transaction.type}
-            </span>
-
-                                        <span>
-                {new Intl.DateTimeFormat('en-ZA', {
-                    day: 'numeric',
-                    month: 'short'
-                }).format(
-                    new Date(`${transaction.transactionDate}T00:00:00`)
-                )}
-            </span>
-                                    </div>
-                                ))
-                            ) : (
-                                <p>No recent transactions found.</p>
-                            )}
-
-                        </div>
-
-                    </div>
-
-
-                    {financialLoading ? (
-                        <p>Loading expense breakdown...</p>
-                    ) : financialError ? (
-                        <p>Unable to load expense breakdown.</p>
-                    ) : Object.entries(financialData?.expenseBreakdown || {}).length > 0 ? (
-                        Object.entries(financialData.expenseBreakdown).map(
-                            ([category, percentage]) => {
-                                const amount =
-                                    Number(financialData.expenses) *
-                                    Number(percentage) / 100;
-
-                                return (
-                                    <div className="expense-bar-item" key={category}>
-                                        <div className="expense-bar-info">
-                                            <span>{category}</span>
-                                            <span>
-                            {formatCurrency(amount)} (
-                                                {Number(percentage).toFixed(2)}%)
-                        </span>
-                                        </div>
-
-                                        <div className="expense-bar-track">
-                                            <div
-                                                className="expense-bar-fill"
-                                                style={{ width: `${percentage}%` }}
-                                            ></div>
-                                        </div>
-                                    </div>
-                                );
-                            }
-                        )
-                    ) : (
-                        <p>No expense data available.</p>
-                    )}
-
-                </div>
+        <section className="fnb-lower-grid">
+          <div className="fnb-panel">
+            <div className="fnb-panel-header">
+              <h2>Recent Transactions</h2>
+              <button onClick={() => navigate('/transactions')}>View All</button>
             </div>
-        </div>
-    );
+
+            {loading ? (
+              <p className="fnb-status-text">Loading recent transactions...</p>
+            ) : error ? (
+              <p className="fnb-status-text">Unable to load transactions.</p>
+            ) : data?.transactions?.length > 0 ? (
+              data.transactions.map((tx) => {
+                const isIncome = tx.type === 'INCOME';
+                return (
+                  <div className="fnb-tx-row" key={tx.id}>
+                    <div>
+                      <h4>{tx.description || 'Untitled Transaction'}</h4>
+                      <p>{tx.categoryName || tx.type} &bull; {tx.transactionDate}</p>
+                    </div>
+                    <div className={`fnb-tx-amt ${isIncome ? 'fnb-positive' : 'fnb-negative'}`}>
+                      {isIncome ? '+' : '-'} {formatCurrency(tx.amount)}
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="fnb-status-text">No transactions recorded for this period.</p>
+            )}
+          </div>
+
+          <div className="fnb-panel">
+            <div className="fnb-panel-header">
+              <h2>Expense Breakdown</h2>
+              <button onClick={() => navigate('/reports')}>Full Report</button>
+            </div>
+
+            {loading ? (
+              <p className="fnb-status-text">Loading expense breakdown...</p>
+            ) : breakdown.length > 0 ? (
+              breakdown.map(([category, rawAmount]) => {
+                const amount = Number(rawAmount) || 0;
+                const pct = totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0;
+                return (
+                  <div className="fnb-bar-item" key={category}>
+                    <div className="fnb-bar-labels">
+                      <span>{category}</span>
+                      <span>{formatCurrency(amount)} ({pct.toFixed(1)}%)</span>
+                    </div>
+                    <div className="fnb-bar-track">
+                      <div className="fnb-bar-fill" style={{ width: `${Math.min(100, Math.max(0, pct))}%` }} />
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="fnb-status-text">No categorized expenses in this period.</p>
+            )}
+          </div>
+        </section>
+      </main>
+    </div>
+  );
 };
 
 export default Dashboard;

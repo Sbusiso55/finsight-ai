@@ -1,0 +1,158 @@
+.auth-container,
+.signup-container,
+.login-container {
+  background-color: #1A1A1A !important;
+  color: #FFFFFF !important;
+  font-family: 'DM Sans', sans-serif !important;
+  min-height: 100vh !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 48px 24px !important;
+  box-sizing: border-box !important;
+}
+
+.auth-card,
+.signup-card,
+.login-card {
+  background: #1F1F1F !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
+  padding: 48px 44px !important;
+  width: 100% !important;
+  max-width: 460px !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 24px !important;
+  box-sizing: border-box !important;
+}
+
+.auth-logo-wrapper,
+.signup-logo,
+.login-logo {
+  display: flex !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  margin-bottom: -4px !important;
+}
+
+.auth-header h2,
+.login-header h2,
+.signup-header h2 {
+  font-size: 26px !important;
+  font-weight: 700 !important;
+  color: #FFFFFF !important;
+  letter-spacing: -0.5px !important;
+  margin: 0 0 8px 0 !important;
+}
+
+.auth-header p,
+.login-header p,
+.signup-header p {
+  color: #9E9E9E !important;
+  font-size: 14px !important;
+  margin: 0 !important;
+}
+
+form {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+  width: 100% !important;
+}
+
+form > div,
+.auth-form-group,
+.signup-form-group {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 8px !important;
+  width: 100% !important;
+  text-align: left !important;
+}
+
+form label {
+  display: block !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1.5px !important;
+  color: #888888 !important;
+  font-weight: 700 !important;
+  text-align: left !important;
+  margin: 0 !important;
+}
+
+form input {
+  display: block !important;
+  width: 100% !important;
+  height: 46px !important;
+  background: #141414 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #FFFFFF !important;
+  border-radius: 6px !important;
+  padding: 0 16px !important;
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: 14px !important;
+  box-sizing: border-box !important;
+}
+
+form input:focus {
+  outline: none !important;
+  border-color: #E5E5E5 !important;
+  box-shadow: 0 0 0 2px rgba(229, 229, 229, 0.12) !important;
+}
+
+button[type="submit"],
+.auth-submit-btn {
+  display: block !important;
+  width: 100% !important;
+  height: 48px !important;
+  background-color: #E5E5E5 !important;
+  border: 1px solid #E5E5E5 !important;
+  color: #1A1A1A !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  letter-spacing: 1.5px !important;
+  text-transform: uppercase !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  margin-top: 8px !important;
+  transition: background-color 0.2s ease !important;
+}
+
+button[type="submit"]:hover,
+.auth-submit-btn:hover {
+  background-color: #FFFFFF !important;
+  border-color: #FFFFFF !important;
+}
+
+.auth-footer-text,
+.login-footer,
+.signup-footer {
+  text-align: center !important;
+  color: #888888 !important;
+  font-size: 13px !important;
+  margin-top: 4px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+  padding-top: 20px !important;
+}
+
+.auth-footer-text a,
+.login-footer a,
+.signup-footer a {
+  color: #E5E5E5 !important;
+  text-decoration: none !important;
+  font-weight: 600 !important;
+  margin-left: 4px !important;
+}
+
+.auth-footer-text a:hover,
+.login-footer a:hover,
+.signup-footer a:hover {
+  color: #FFFFFF !important;
+  text-decoration: underline !important;
+}

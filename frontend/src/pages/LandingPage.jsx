@@ -1,121 +1,114 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import Logo from '../components/Logo';
 import './LandingPage.css';
 
 const LandingPage = () => {
-    const navigate = useNavigate();
-    const [introPhase, setIntroPhase] = useState('dark');
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        const timer1 = setTimeout(() => setIntroPhase('logo'), 400);
-        const timer2 = setTimeout(() => setIntroPhase('tagline'), 1800);
-        const timer3 = setTimeout(() => setIntroPhase('reveal'), 3200);
-        const timer4 = setTimeout(() => setIntroPhase('done'), 4200);
+  return (
+    <div className="landing-container">
+      <nav className="landing-nav">
+        <Logo onClick={() => navigate('/')} />
 
-        return () => {
-            clearTimeout(timer1);
-            clearTimeout(timer2);
-            clearTimeout(timer3);
-            clearTimeout(timer4);
-        };
-    }, []);
+        <ul className="landing-nav-links">
+          <li onClick={() => navigate('/')}>Overview</li>
+          <li onClick={() => navigate('/about')}>About</li>
+          <li onClick={() => navigate('/help')}>Help & FAQ</li>
+          <li onClick={() => navigate('/contact')}>Contact</li>
+        </ul>
 
-    return (
-        <div className="landing-wrapper">
-            {introPhase !== 'done' && (
-                <div className={`intro-screen ${introPhase === 'reveal' ? 'intro-exit' : ''}`}>
-                    <div className="intro-content">
-                        <h1 className={`intro-logo ${introPhase === 'logo' || introPhase === 'tagline' || introPhase === 'reveal' ? 'visible' : ''}`}>
-                            Fin<span className="intro-highlight">Sight</span>
-                        </h1>
-                        <p className={`intro-tagline ${introPhase === 'tagline' || introPhase === 'reveal' ? 'visible' : ''}`}>
-                            Intelligence meets finance
-                        </p>
-                    </div>
-                    <div className="intro-line-left"></div>
-                    <div className="intro-line-right"></div>
-                </div>
-            )}
-
-            <div className={`landing-container ${introPhase === 'done' ? 'landing-visible' : ''}`}>
-                <div className="landing-glow-1"></div>
-                <div className="landing-glow-2"></div>
-                <div className="landing-glow-3"></div>
-
-                <nav className="landing-nav">
-                    <div className="nav-logo">
-                        Fin<span className="highlight">Sight</span>
-                    </div>
-                    <div className="nav-links">
-                        <button className="nav-btn" onClick={() => navigate('/login')}>Log In</button>
-                        <button className="nav-btn primary" onClick={() => navigate('/signup')}>Get Started</button>
-                    </div>
-                </nav>
-
-                <section className="hero-section">
-                    <div className="hero-badge">AI-Powered Financial Intelligence</div>
-                    <h1 className="hero-title">
-                        Know your numbers.<br />
-                        <span className="hero-gradient-text">Grow your business.</span>
-                    </h1>
-                    <p className="hero-subtitle">
-                        FinSight gives small businesses the financial clarity they need —
-                        real-time tracking, smart forecasting, and AI-driven insights
-                        that turn raw numbers into confident decisions.
-                    </p>
-                    <div className="hero-buttons">
-                        <button className="hero-btn primary" onClick={() => navigate('/signup')}>
-                            Start Free
-                        </button>
-                        <button className="hero-btn secondary" onClick={() => navigate('/login')}>
-                            View Demo
-                        </button>
-                    </div>
-                </section>
-
-                <section className="features-section">
-                    <div className="features-header">
-                        <p className="features-label">What FinSight Does</p>
-                        <h2 className="features-title">Built for businesses<br />that move forward.</h2>
-                    </div>
-
-                    <div className="features-grid">
-                        <div className="feature-item">
-                            <div className="feature-number">01</div>
-                            <div className="feature-line"></div>
-                            <h3>Revenue Tracking</h3>
-                            <p>Monitor every rand coming in. Real-time breakdowns, growth percentages, and transaction history at a glance.</p>
-                        </div>
-
-                        <div className="feature-item">
-                            <div className="feature-number">02</div>
-                            <div className="feature-line"></div>
-                            <h3>Smart Forecasting</h3>
-                            <p>AI analyses your patterns and predicts where your business is heading. Revenue, expenses, and profit — months ahead.</p>
-                        </div>
-
-                        <div className="feature-item">
-                            <div className="feature-number">03</div>
-                            <div className="feature-line"></div>
-                            <h3>Ask AI Anything</h3>
-                            <p>Have a conversation with your finances. Ask questions, get answers, make decisions backed by real data.</p>
-                        </div>
-
-                        <div className="feature-item">
-                            <div className="feature-number">04</div>
-                            <div className="feature-line"></div>
-                            <h3>Expense Intelligence</h3>
-                            <p>See where every rand goes. Fixed vs variable costs, category breakdowns, and trends that reveal what's eating your profit.</p>
-                        </div>
-                    </div>
-                </section>
-
-                <footer className="landing-footer">
-                    <p>FinSight AI — Built for South African businesses</p>
-                </footer>
-            </div>
+        <div className="landing-nav-actions">
+          <button className="landing-btn-outline" onClick={() => navigate('/login')}>
+            Sign In
+          </button>
+          <button className="landing-btn-gold" onClick={() => navigate('/signup')}>
+            Get Started
+          </button>
         </div>
-    );
+      </nav>
+
+      <header className="landing-hero">
+        <div className="landing-hero-ambient" />
+        <div className="landing-hero-content">
+          <span className="landing-hero-tag">Precision Financial Engineering</span>
+          <h1>Command Your Business Cash Flow With Clarity.</h1>
+          <p>
+            Built for South African entrepreneurs and growing enterprises. Real-time revenue
+            intelligence, automated margin tracking, and conversational financial forecasting.
+          </p>
+          <div className="landing-hero-cta">
+            <button className="landing-btn-gold landing-btn-lg" onClick={() => navigate('/signup')}>
+              Launch Platform
+            </button>
+            <button className="landing-btn-outline landing-btn-lg" onClick={() => navigate('/about')}>
+              Explore Architecture
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <section className="landing-specs-bar">
+        <div className="landing-spec-item">
+          <h4>100%</h4>
+          <p>BigDecimal Precision</p>
+        </div>
+        <div className="landing-spec-item">
+          <h4>&lt; 200ms</h4>
+          <p>Real-Time Ledger Sync</p>
+        </div>
+        <div className="landing-spec-item">
+          <h4>ZAR / R</h4>
+          <p>Native Currency Engine</p>
+        </div>
+        <div className="landing-spec-item">
+          <h4>24/7</h4>
+          <p>Gemini Financial Analyst</p>
+        </div>
+      </section>
+
+      <section className="landing-showcase">
+        <div className="landing-section-header">
+          <span>Core Capabilities</span>
+          <h2>Engineered For Executive Decisions</h2>
+        </div>
+
+        <div className="landing-grid-3">
+          <div className="landing-showcase-card">
+            <div className="landing-card-number">01 // CASH FLOW</div>
+            <h3>Live Liquidity Telemetry</h3>
+            <p>
+              Track opening balances, net cash movements, and closing positions across every
+              reporting period without spreadsheet delays.
+            </p>
+          </div>
+
+          <div className="landing-showcase-card">
+            <div className="landing-card-number">02 // MARGINS</div>
+            <h3>Automated Cost Classification</h3>
+            <p>
+              Separate fixed overheads from variable expenses instantly to monitor gross and net
+              profit margins in real time.
+            </p>
+          </div>
+
+          <div className="landing-showcase-card">
+            <div className="landing-card-number">03 // FINSIGHT AI</div>
+            <h3>Conversational Intelligence</h3>
+            <p>
+              Query your ledger in plain English to uncover spending anomalies, tax liabilities,
+              and three-month revenue projections.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <footer className="landing-footer">
+        <div>&copy; 2026 FinSight AI. All rights reserved.</div>
+        <div>Johannesburg &bull; Gauteng &bull; South Africa</div>
+      </footer>
+    </div>
+  );
 };
 
 export default LandingPage;

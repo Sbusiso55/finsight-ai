@@ -1,6 +1,6 @@
 package com.finsight.dto;
 
-// Data the client sends to register
+
 
 import lombok.*;
 @ToString

@@ -1,52 +1,60 @@
 import React, { useState } from 'react';
 import Navbar from '../components/Navbar';
+import api from '../api/axiosConfig';
 import './AskAI.css';
 
 const AskAI = () => {
-    const [message, setMessage] = useState('');
-    const [messages, setMessages] = useState([
-        { role: 'ai', text: 'Hi, I\'m FinSight AI. Ask me anything about your finances — revenue, expenses, forecasts, or advice.' }
-    ]);
+  const [query, setQuery] = useState('');
+  const [response, setResponse] = useState('');
+  const [loading, setLoading] = useState(false);
 
-    const handleSend = (e) => {
-        e.preventDefault();
-        if (!message.trim()) return;
+  const handleAsk = async (e) => {
+    e.preventDefault();
+    if (!query.trim()) return;
+    setLoading(true);
+    setResponse('');
 
-        setMessages([...messages, { role: 'user', text: message }, { role: 'ai', text: 'I\'m analysing your financial data. This feature will be connected to the AI engine soon.' }]);
-        setMessage('');
-    };
+    try {
+      const res = await api.post('/api/ai/query', { prompt: query });
+      setResponse(res.data?.answer || res.data?.message || 'Analysis complete.');
+    } catch (err) {
+      console.error('AI query failed:', err);
+      setResponse('Unable to reach FinSight AI analyst at the moment.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    return (
-        <div className="askai-wrapper">
-            <Navbar />
-            <div className="askai-content">
-                <div className="askai-header">
-                    <h1 className="askai-title">Ask AI</h1>
-                    <p className="askai-subtitle">Have a conversation with your finances.</p>
-                </div>
-                <div className="askai-chat">
-                    <div className="askai-messages">
-                        {messages.map((msg, i) => (
-                            <div key={i} className={`askai-msg ${msg.role}`}>
-                                <div className="askai-msg-bubble">
-                                    {msg.text}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                    <form className="askai-input-area" onSubmit={handleSend}>
-                        <input
-                            type="text"
-                            placeholder="Ask about your revenue, expenses, forecasts..."
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                        />
-                        <button type="submit">Send</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    );
+  return (
+    <div className="ai-layout">
+      <Navbar />
+      <main className="ai-container">
+        <h1>FinSight AI Analyst</h1>
+        <p className="ai-subtitle">Ask questions about your cash flow, expenses, or forecasts in plain English.</p>
+
+        <form className="ai-form" onSubmit={handleAsk}>
+          <input
+            type="text"
+            className="ai-input"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="e.g. What were my top three expenses this month?"
+            required
+          />
+          <button type="submit" className="ai-btn" disabled={loading}>
+            {loading ? 'Analyzing...' : 'Ask AI'}
+          </button>
+        </form>
+
+        {response && (
+          <div className="ai-response-box">
+            <h3>AI Response</h3>
+            <p>{response}</p>
+          </div>
+        )}
+      </main>
+    </div>
+  );
 };
 
 export default AskAI;

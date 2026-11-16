@@ -1,173 +1,97 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
+import api from '../api/axiosConfig';
 import './Settings.css';
 
 const Settings = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    businessName: '',
-    currency: 'ZAR',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [aiAlerts, setAiAlerts] = useState(true);
+  const [currency, setCurrency] = useState('ZAR');
+  const [theme, setTheme] = useState('dark-charcoal');
+  const [saved, setSaved] = useState(false);
 
-  const [message, setMessage] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  useEffect(() => {
+    let ignore = false;
+    const loadSettings = async () => {
+      try {
+        const res = await api.get('/api/users/user');
+        if (!ignore && res.data) {
+          // If user preferences exist, they can be initialized here
+        }
+      } catch (err) {
+        console.error('Failed to load settings preferences:', err);
+      }
+    };
+    loadSettings();
+    return () => { ignore = true; };
+  }, []);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = (e) => {
+  const handleSave = (e) => {
     e.preventDefault();
-    setMessage(null);
-
-    if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
-      setMessage({ type: 'error', text: 'New passwords do not match.' });
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setMessage({ type: 'success', text: 'Settings saved successfully.' });
-      setFormData((prev) => ({
-        ...prev,
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      }));
-    }, 800);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
   };
 
   return (
-    <div className="settings-wrapper">
+    <div className="settings-layout">
       <Navbar />
-      <div className="settings-content">
-        <h2 className="settings-title">Account Settings</h2>
-        <p className="settings-subtitle">Manage your profile details and security preferences.</p>
+      <main className="settings-container">
+        <h1>Application Settings</h1>
 
-        {message && (
-          <div className={`settings-alert ${message.type}`}>
-            {message.text}
-          </div>
-        )}
+        {saved && <div className="settings-success">Preferences saved successfully.</div>}
 
-        <form onSubmit={handleSubmit} className="settings-form">
-          <div className="settings-section">
-            <h3 className="settings-section-title">Profile Details</h3>
+        <form className="settings-card" onSubmit={handleSave}>
+          <h2>Preferences & Notifications</h2>
 
-            <div className="settings-field">
-              <label htmlFor="name">Full Name</label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                placeholder="Enter your name"
-              />
+          <div className="settings-toggle-row">
+            <div>
+              <h4>Email Notifications</h4>
+              <p>Receive weekly financial summaries and transaction digests.</p>
             </div>
-
-            <div className="settings-field">
-              <label htmlFor="email">Email Address</label>
+            <label className="settings-switch">
               <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                placeholder="Enter your email"
+                type="checkbox"
+                checked={emailNotifications}
+                onChange={(e) => setEmailNotifications(e.target.checked)}
               />
-            </div>
+              <span className="settings-slider" />
+            </label>
           </div>
 
-          <div className="settings-section">
-            <h3 className="settings-section-title">Business Information</h3>
-
-            <div className="settings-field">
-              <label htmlFor="businessName">Business Name</label>
+          <div className="settings-toggle-row">
+            <div>
+              <h4>FinSight AI Insights & Alerts</h4>
+              <p>Get real-time AI warnings when spending exceeds budget thresholds.</p>
+            </div>
+            <label className="settings-switch">
               <input
-                type="text"
-                id="businessName"
-                name="businessName"
-                value={formData.businessName}
-                onChange={handleChange}
-                placeholder="Enter your business name"
+                type="checkbox"
+                checked={aiAlerts}
+                onChange={(e) => setAiAlerts(e.target.checked)}
               />
-            </div>
-
-            <div className="settings-field">
-              <label htmlFor="currency">Currency</label>
-              <select
-                id="currency"
-                name="currency"
-                value={formData.currency}
-                onChange={handleChange}
-              >
-                <option value="ZAR">ZAR — South African Rand</option>
-                <option value="USD">USD — US Dollar</option>
-                <option value="EUR">EUR — Euro</option>
-                <option value="GBP">GBP — British Pound</option>
-              </select>
-            </div>
+              <span className="settings-slider" />
+            </label>
           </div>
 
-          <div className="settings-section">
-            <h3 className="settings-section-title">Change Password</h3>
-
-            <div className="settings-field">
-              <label htmlFor="currentPassword">Current Password</label>
-              <input
-                type="password"
-                id="currentPassword"
-                name="currentPassword"
-                value={formData.currentPassword}
-                onChange={handleChange}
-                placeholder=" "
-              />
-            </div>
-
-            <div className="settings-field">
-              <label htmlFor="newPassword">New Password</label>
-              <input
-                type="password"
-                id="newPassword"
-                name="newPassword"
-                value={formData.newPassword}
-                onChange={handleChange}
-                placeholder=" "
-              />
-            </div>
-
-            <div className="settings-field">
-              <label htmlFor="confirmPassword">Confirm New Password</label>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                placeholder=" "
-              />
-            </div>
+          <div className="settings-field-group">
+            <label>Default Currency</label>
+            <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
+              <option value="ZAR">ZAR (South African Rand)</option>
+              <option value="USD">USD (US Dollar)</option>
+            </select>
           </div>
 
-          <button type="submit" className="settings-save" disabled={isSubmitting}>
-            {isSubmitting ? 'Saving...' : 'Save Changes'}
-          </button>
+          <div className="settings-field-group">
+            <label>Interface Theme</label>
+            <select value={theme} onChange={(e) => setTheme(e.target.value)}>
+              <option value="dark-charcoal">Dark Charcoal & Warm Gold</option>
+              <option value="fnb-light">FNB Clean Light Banking</option>
+            </select>
+          </div>
+
+          <button type="submit" className="settings-save-btn">Save Preferences</button>
         </form>
-      </div>
+      </main>
     </div>
   );
 };

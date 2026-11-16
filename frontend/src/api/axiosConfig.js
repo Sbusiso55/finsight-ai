@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 const api = axios.create({
@@ -8,21 +7,28 @@ const api = axios.create({
     },
 });
 
-// Attach the JWT to requests when a token is available.
+const isAuthUrl = (url) => url?.startsWith('/auth/');
+
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
-
-        // Don't attach an old JWT to login or signup requests.
-        const isAuthRequest = config.url?.startsWith('/auth/');
-
-        if (token && !isAuthRequest) {
+        if (token && !isAuthUrl(config.url)) {
             config.headers.Authorization = `Bearer ${token}`;
         }
-
         return config;
     },
     (error) => Promise.reject(error)
+);
+
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401 && !isAuthUrl(error.config?.url)) {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        }
+        return Promise.reject(error);
+    }
 );
 
 export default api;
