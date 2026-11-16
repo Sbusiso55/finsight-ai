@@ -1,84 +1,131 @@
 package com.finsight.controller;
 
 import com.finsight.dto.BusinessDTO;
+import com.finsight.dto.BusinessRequest;
 import com.finsight.model.Business;
+import com.finsight.model.Category;
+import com.finsight.model.enums.CostBehavior;
+import com.finsight.model.enums.CostClassification;
+import com.finsight.model.enums.TransactionType;
+import com.finsight.security.BusinessAccess;
 import com.finsight.service.BusinessService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.finsight.service.CategoryService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/businesses")
 public class BusinessController {
 
-    @Autowired
-    private BusinessService businessService;
+    private final BusinessService businessService;
+    private final BusinessAccess businessAccess;
+    private final CategoryService categoryService;
 
-    @GetMapping("/owner/{ownerId}")
-    public ResponseEntity<List<BusinessDTO>> getByOwner(@PathVariable Long ownerId) {
-        return ResponseEntity.ok(
-                businessService.getBusinessesByOwner(ownerId).stream()
-                        .map(BusinessDTO::from)
-                        .toList());
+    public BusinessController(BusinessService businessService,
+                              BusinessAccess businessAccess,
+                              CategoryService categoryService) {
+        this.businessService = businessService;
+        this.businessAccess = businessAccess;
+        this.categoryService = categoryService;
     }
 
     @GetMapping("/owner")
-    public ResponseEntity<List<Business>> getMyBusinesses(
-            @AuthenticationPrincipal UserDetails userDetails) {
-
-        List<Business> businesses =
-                businessService.getBusinessesByOwnerEmail(
-                        userDetails.getUsername()
-                );
-
-        return ResponseEntity.ok(businesses);
-    }
-
-    @GetMapping("/accessible/{userId}")
-    public ResponseEntity<List<BusinessDTO>> getAccessible(@PathVariable Long userId) {
+    public ResponseEntity<List<BusinessDTO>> getMyBusinesses(@AuthenticationPrincipal UserDetails user) {
         return ResponseEntity.ok(
-                businessService.getAccessibleBusinesses(userId).stream()
+                businessService.getBusinessesByOwnerEmail(user.getUsername()).stream()
                         .map(BusinessDTO::from)
                         .toList());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<BusinessDTO> getById(@PathVariable Long id) {
-        return businessService.getBusinessById(id)
-                .map(BusinessDTO::from)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<BusinessDTO> getById(@PathVariable Long id,
+                                               @AuthenticationPrincipal UserDetails user) {
+        return ResponseEntity.ok(BusinessDTO.from(businessAccess.requireOwned(id, user.getUsername())));
     }
 
-
     @PostMapping
-    public ResponseEntity<BusinessDTO> create(
-            @RequestBody Business business,
-            @AuthenticationPrincipal UserDetails userDetails) {
-
-        Business savedBusiness = businessService.saveBusiness(business, userDetails.getUsername());
-        return ResponseEntity.ok(BusinessDTO.from(savedBusiness));
+    public ResponseEntity<BusinessDTO> create(@RequestBody BusinessRequest request,
+                                              @AuthenticationPrincipal UserDetails user) {
+        validate(request);
+        Business business = new Business();
+        apply(business, request);
+        Business saved = businessService.saveBusiness(business, user.getUsername());
+        createDefaultCategories(saved);
+        return ResponseEntity.status(HttpStatus.CREATED).body(BusinessDTO.from(saved));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<BusinessDTO> update(@PathVariable Long id, @RequestBody Business business) {
-        return businessService.getBusinessById(id)
-                .map(existing -> {
-                    business.setId(id);
-                    Business saved = businessService.saveBusiness(business, business.getOwner().getEmail());
-                    return ResponseEntity.ok(BusinessDTO.from(saved));
-                })
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<BusinessDTO> update(@PathVariable Long id,
+                                              @RequestBody BusinessRequest request,
+                                              @AuthenticationPrincipal UserDetails user) {
+        validate(request);
+        Business existing = businessAccess.requireOwned(id, user.getUsername());
+        apply(existing, request);
+        return ResponseEntity.ok(BusinessDTO.from(businessService.saveBusiness(existing, user.getUsername())));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id,
+                                       @AuthenticationPrincipal UserDetails user) {
+        businessAccess.requireOwned(id, user.getUsername());
         businessService.deleteBusiness(id);
         return ResponseEntity.noContent().build();
     }
-}
 
+    private void validate(BusinessRequest r) {
+        if (r.getName() == null || r.getName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Business name is required");
+        }
+        if (r.getOpeningBalance() != null && r.getOpeningBalance().compareTo(BigDecimal.ZERO) < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Opening balance cannot be negative");
+        }
+    }
+
+    private void apply(Business b, BusinessRequest r) {
+        b.setName(r.getName().trim());
+        b.setIndustry(r.getIndustry());
+        b.setCurrency(r.getCurrency() == null || r.getCurrency().isBlank() ? "ZAR" : r.getCurrency());
+        b.setOpeningBalance(r.getOpeningBalance() == null ? BigDecimal.ZERO : r.getOpeningBalance());
+        b.setOpeningBalanceDate(r.getOpeningBalanceDate());
+        b.setSeasonal(r.isSeasonal());
+    }
+
+    private void createDefaultCategories(Business business) {
+        addCategory(business, "Sales", TransactionType.INCOME, null, null);
+        addCategory(business, "Services", TransactionType.INCOME, null, null);
+        addCategory(business, "Other Income", TransactionType.INCOME, null, null);
+
+        addCategory(business, "Stock Purchases", TransactionType.EXPENSE,
+                CostBehavior.VARIABLE, CostClassification.COST_OF_GOODS_SOLD);
+        addCategory(business, "Rent", TransactionType.EXPENSE,
+                CostBehavior.FIXED, CostClassification.OPERATING_EXPENSE);
+        addCategory(business, "Wages", TransactionType.EXPENSE,
+                CostBehavior.FIXED, CostClassification.OPERATING_EXPENSE);
+        addCategory(business, "Utilities", TransactionType.EXPENSE,
+                CostBehavior.VARIABLE, CostClassification.OPERATING_EXPENSE);
+        addCategory(business, "Transport", TransactionType.EXPENSE,
+                CostBehavior.VARIABLE, CostClassification.OPERATING_EXPENSE);
+        addCategory(business, "Marketing", TransactionType.EXPENSE,
+                CostBehavior.VARIABLE, CostClassification.OPERATING_EXPENSE);
+        addCategory(business, "Other Expenses", TransactionType.EXPENSE,
+                CostBehavior.VARIABLE, CostClassification.OPERATING_EXPENSE);
+    }
+
+    private void addCategory(Business business, String name, TransactionType type,
+                             CostBehavior behavior, CostClassification classification) {
+        Category c = new Category();
+        c.setBusiness(business);
+        c.setName(name);
+        c.setType(type);
+        c.setCostBehavior(behavior);
+        c.setCostClassification(classification);
+        categoryService.saveCategory(c);
+    }
+}

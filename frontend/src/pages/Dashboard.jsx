@@ -42,6 +42,9 @@ const formatCurrency = (amount) => {
   return `R ${num.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
+const valueOf = (result, fallback) =>
+  result.status === 'fulfilled' ? result.value.data ?? fallback : fallback;
+
 const Dashboard = () => {
   const navigate = useNavigate();
 
@@ -52,7 +55,7 @@ const Dashboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState(() => toPeriodKey(new Date()));
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
+  const [txError, setTxError] = useState(false);
 
   useEffect(() => {
     let ignore = false;
@@ -64,11 +67,8 @@ const Dashboard = () => {
       ]);
       if (ignore) return;
 
-      if (userRes.status === 'fulfilled') {
-        setUser(userRes.value.data);
-      } else {
-        console.error('Failed to load user:', userRes.reason);
-      }
+      if (userRes.status === 'fulfilled') setUser(userRes.value.data);
+      else console.error('Failed to load user:', userRes.reason);
 
       if (bizRes.status === 'fulfilled') {
         const list = Array.isArray(bizRes.value.data) ? bizRes.value.data : [];
@@ -91,34 +91,30 @@ const Dashboard = () => {
 
     const loadFinancials = async () => {
       setLoading(true);
-      setError(false);
+      setTxError(false);
       const { from, to } = getDateRange(selectedPeriod);
       const q = `businessId=${selectedBusinessId}&from=${from}&to=${to}`;
 
-      try {
-        const [revenueRes, expensesRes, marginRes, breakdownRes, txRes] = await Promise.all([
-          api.get(`/api/revenue/total?${q}`),
-          api.get(`/api/expenses/total?${q}`),
-          api.get(`/api/profit-margin/net?${q}`),
-          api.get(`/api/expenses/breakdown?${q}`),
-          api.get(`/api/transactions?businessId=${selectedBusinessId}&page=0&size=5`),
-        ]);
-        if (ignore) return;
-        setData({
-          revenue: revenueRes.data ?? 0,
-          expenses: expensesRes.data ?? 0,
-          netProfitMargin: marginRes.data ?? 0,
-          expenseBreakdown: breakdownRes.data ?? {},
-          transactions: txRes.data?.content ?? [],
-        });
-      } catch (err) {
-        if (!ignore) {
-          console.error('Error loading dashboard metrics:', err);
-          setError(true);
-        }
-      } finally {
-        if (!ignore) setLoading(false);
-      }
+      const [revenueRes, expensesRes, breakdownRes, txRes] = await Promise.allSettled([
+        api.get(`/api/transactions/revenue?${q}`),
+        api.get(`/api/transactions/expenses?${q}`),
+        api.get(`/api/expenses/breakdown?${q}`),
+        api.get(`/api/transactions?businessId=${selectedBusinessId}&page=0&size=5&sort=createdAt,desc`),
+      ]);
+      if (ignore) return;
+
+      [revenueRes, expensesRes, breakdownRes, txRes].forEach((r) => {
+        if (r.status === 'rejected') console.error('Dashboard request failed:', r.reason);
+      });
+
+      setTxError(txRes.status === 'rejected');
+      setData({
+        revenue: valueOf(revenueRes, 0),
+        expenses: valueOf(expensesRes, 0),
+        expenseBreakdown: valueOf(breakdownRes, {}),
+        transactions: txRes.status === 'fulfilled' ? txRes.value.data?.content ?? [] : [],
+      });
+      setLoading(false);
     };
 
     loadFinancials();
@@ -126,10 +122,11 @@ const Dashboard = () => {
   }, [selectedBusinessId, selectedPeriod]);
 
   const currentBusiness = businesses.find((b) => b.id === selectedBusinessId);
+  const revenue = Number(data?.revenue) || 0;
   const totalExpenses = Number(data?.expenses) || 0;
+  const netProfitMargin = revenue > 0 ? ((revenue - totalExpenses) / revenue) * 100 : 0;
   const breakdown = Object.entries(data?.expenseBreakdown || {});
-  const netCashPosition =
-    (Number(currentBusiness?.openingBalance) || 0) + (Number(data?.revenue) || 0) - totalExpenses;
+  const netCashPosition = (Number(currentBusiness?.openingBalance) || 0) + revenue - totalExpenses;
 
   return (
     <div className="fnb-dashboard-layout">
@@ -142,6 +139,21 @@ const Dashboard = () => {
             <p className="fnb-status-text">
               You haven't added a business yet. Add one to start tracking your finances.
             </p>
+            <button
+              onClick={() => navigate('/business-setup')}
+              style={{
+                marginTop: 14,
+                background: '#1A1A1A',
+                color: '#E5E5E5',
+                border: 'none',
+                padding: '10px 20px',
+                borderRadius: 10,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Set Up Business
+            </button>
           </div>
         )}
 
@@ -216,15 +228,15 @@ const Dashboard = () => {
         <section className="fnb-metrics-grid">
           <div className="fnb-metric-card">
             <span>Period Revenue</span>
-            <h3 className="fnb-positive">{formatCurrency(data?.revenue)}</h3>
+            <h3 className="fnb-positive">{formatCurrency(revenue)}</h3>
           </div>
           <div className="fnb-metric-card">
             <span>Period Expenses</span>
-            <h3 className="fnb-negative">{formatCurrency(data?.expenses)}</h3>
+            <h3 className="fnb-negative">{formatCurrency(totalExpenses)}</h3>
           </div>
           <div className="fnb-metric-card">
             <span>Net Profit Margin</span>
-            <h3>{Number(data?.netProfitMargin || 0).toFixed(2)}%</h3>
+            <h3>{netProfitMargin.toFixed(2)}%</h3>
           </div>
         </section>
 
@@ -237,7 +249,7 @@ const Dashboard = () => {
 
             {loading ? (
               <p className="fnb-status-text">Loading recent transactions...</p>
-            ) : error ? (
+            ) : txError ? (
               <p className="fnb-status-text">Unable to load transactions.</p>
             ) : data?.transactions?.length > 0 ? (
               data.transactions.map((tx) => {
@@ -246,7 +258,7 @@ const Dashboard = () => {
                   <div className="fnb-tx-row" key={tx.id}>
                     <div>
                       <h4>{tx.description || 'Untitled Transaction'}</h4>
-                      <p>{tx.categoryName || tx.type} &bull; {tx.transactionDate}</p>
+                      <p>{tx.category?.name || tx.type} &bull; {tx.transactionDate}</p>
                     </div>
                     <div className={`fnb-tx-amt ${isIncome ? 'fnb-positive' : 'fnb-negative'}`}>
                       {isIncome ? '+' : '-'} {formatCurrency(tx.amount)}
@@ -255,7 +267,7 @@ const Dashboard = () => {
                 );
               })
             ) : (
-              <p className="fnb-status-text">No transactions recorded for this period.</p>
+              <p className="fnb-status-text">No transactions recorded yet.</p>
             )}
           </div>
 
