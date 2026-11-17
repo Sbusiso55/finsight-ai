@@ -9,6 +9,8 @@ import com.finsight.security.BusinessAccess;
 import com.finsight.service.CategoryService;
 import com.finsight.service.TransactionService;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,10 +40,20 @@ public class TransactionController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<TransactionDTO>> getTransactions(@RequestParam Long businessId, Pageable pageable,
-                                                                @AuthenticationPrincipal UserDetails user) {
+    public ResponseEntity<Page<TransactionDTO>> getTransactions(
+            @RequestParam Long businessId,
+            @PageableDefault(
+                    sort = {"createdAt", "id"},
+                    direction = Sort.Direction.DESC
+            ) Pageable pageable,
+            @AuthenticationPrincipal UserDetails user) {
+
         businessAccess.requireOwned(businessId, user.getUsername());
-        return ResponseEntity.ok(transactionService.findByBusinessId(businessId, pageable).map(TransactionDTO::from));
+
+        return ResponseEntity.ok(
+                transactionService.findByBusinessId(businessId, pageable)
+                        .map(TransactionDTO::from)
+        );
     }
 
     @GetMapping("/{id}")
