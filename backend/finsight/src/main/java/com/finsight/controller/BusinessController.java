@@ -8,6 +8,7 @@ import com.finsight.model.enums.CostBehavior;
 import com.finsight.model.enums.CostClassification;
 import com.finsight.model.enums.TransactionType;
 import com.finsight.security.BusinessAccess;
+import com.finsight.service.BusinessDeletionService;
 import com.finsight.service.BusinessService;
 import com.finsight.service.CategoryService;
 import org.springframework.http.HttpStatus;
@@ -27,13 +28,16 @@ public class BusinessController {
     private final BusinessService businessService;
     private final BusinessAccess businessAccess;
     private final CategoryService categoryService;
+    private final BusinessDeletionService businessDeletionService;
 
     public BusinessController(BusinessService businessService,
                               BusinessAccess businessAccess,
-                              CategoryService categoryService) {
+                              CategoryService categoryService,
+                              BusinessDeletionService businessDeletionService) {
         this.businessService = businessService;
         this.businessAccess = businessAccess;
         this.categoryService = categoryService;
+        this.businessDeletionService = businessDeletionService;
     }
 
     @GetMapping("/owner")
@@ -71,11 +75,12 @@ public class BusinessController {
         return ResponseEntity.ok(BusinessDTO.from(businessService.saveBusiness(existing, user.getUsername())));
     }
 
+    /** Ownership check first, then delete transactions, customers, categories and the business in one transaction. */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id,
                                        @AuthenticationPrincipal UserDetails user) {
         businessAccess.requireOwned(id, user.getUsername());
-        businessService.deleteBusiness(id);
+        businessDeletionService.deleteBusinessAndData(id);
         return ResponseEntity.noContent().build();
     }
 
