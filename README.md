@@ -1,4 +1,4 @@
- finsight-ai
+ Clearside Pay
 AI-powered financial intelligence platform
 An AI-powered financial intelligence platform that allows small
 business owners and individuals to input their income, expenses

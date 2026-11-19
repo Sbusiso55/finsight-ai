@@ -19,7 +19,7 @@ const AskAI = () => {
       setResponse(res.data?.answer || res.data?.message || 'Analysis complete.');
     } catch (err) {
       console.error('AI query failed:', err);
-      setResponse('Unable to reach FinSight AI analyst at the moment.');
+      setResponse('Unable to reach Clearside Pay analyst at the moment.');
     } finally {
       setLoading(false);
     }
@@ -29,7 +29,7 @@ const AskAI = () => {
     <div className="ai-layout">
       <Navbar />
       <main className="ai-container">
-        <h1>FinSight AI Analyst</h1>
+        <h1>Clearside Pay Analyst</h1>
         <p className="ai-subtitle">Ask questions about your cash flow, expenses, or forecasts in plain English.</p>
 
         <form className="ai-form" onSubmit={handleAsk}>

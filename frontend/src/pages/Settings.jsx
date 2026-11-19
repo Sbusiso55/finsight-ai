@@ -60,7 +60,7 @@ const Settings = () => {
 
           <div className="settings-toggle-row">
             <div>
-              <h4>FinSight AI Insights & Alerts</h4>
+              <h4>Clearside Pay Insights & Alerts</h4>
               <p>Get real-time AI warnings when spending exceeds budget thresholds.</p>
             </div>
             <label className="settings-switch">
