@@ -4,6 +4,8 @@ import Navbar from '../components/Navbar';
 import api from '../api/axiosConfig';
 import './Profile.css';
 
+const sameName = (a, b) => (a || '').trim().toLowerCase() === (b || '').trim().toLowerCase();
+
 const Profile = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
@@ -13,6 +15,8 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [loadError, setLoadError] = useState(false);
+  const [deleting, setDeleting] = useState(null);
+  const [confirmName, setConfirmName] = useState('');
 
   useEffect(() => {
     const load = async () => {
@@ -56,6 +60,31 @@ const Profile = () => {
     setForm({ fullName: profile?.fullName || '', phoneNumber: profile?.phoneNumber || '' });
     setEditing(false);
     setMessage({ type: '', text: '' });
+  };
+
+  const openDelete = (b) => {
+    setDeleting(b);
+    setConfirmName('');
+  };
+
+  // Optimistic delete: remove from screen now, restore only if the server fails.
+  const handleDelete = async () => {
+    if (!deleting || !sameName(confirmName, deleting.name)) return;
+    const target = deleting;
+    const previous = businesses;
+
+    setBusinesses(businesses.filter((b) => b.id !== target.id));
+    setDeleting(null);
+    setConfirmName('');
+    setMessage({ type: 'success', text: `${target.name} deleted.` });
+
+    try {
+      await api.delete(`/api/businesses/${target.id}`, { timeout: 15000 });
+    } catch (err) {
+      console.error('Delete failed:', err);
+      setBusinesses(previous);
+      setMessage({ type: 'error', text: `Could not delete ${target.name}. Please try again.` });
+    }
   };
 
   const handleSignOut = () => {
@@ -124,8 +153,6 @@ const Profile = () => {
                   <div><dt>Phone</dt><dd>{profile.phoneNumber || 'Not added'}</dd></div>
                 </dl>
               )}
-
-              {message.text && <p className={`pf-message ${message.type}`}>{message.text}</p>}
             </section>
 
             <section className="pf-card">
@@ -139,11 +166,19 @@ const Profile = () => {
                 businesses.map((b) => (
                   <div className="pf-biz-row" key={b.id}>
                     <span>{b.name}</span>
-                    <span className="pf-muted">{b.currency || 'ZAR'}</span>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                      <span className="pf-muted">{b.currency || 'ZAR'}</span>
+                      <button className="pf-btn-danger" style={{ marginLeft: 0, padding: '6px 12px' }}
+                        onClick={() => openDelete(b)}>
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
             </section>
+
+            {message.text && <p className={`pf-message ${message.type}`}>{message.text}</p>}
 
             <section className="pf-card pf-footer-actions">
               <button className="pf-btn-outline" onClick={() => navigate('/help')}>Help & FAQ</button>
@@ -151,6 +186,30 @@ const Profile = () => {
               <button className="pf-btn-danger" onClick={handleSignOut}>Sign Out</button>
             </section>
           </>
+        )}
+
+        {deleting && (
+          <div className="pf-modal-backdrop" onClick={() => setDeleting(null)}>
+            <div className="pf-card pf-modal" onClick={(e) => e.stopPropagation()}>
+              <h3>Delete {deleting.name}?</h3>
+              <p className="pf-muted">
+                This permanently deletes the business and all its transactions, categories and
+                customers. This cannot be undone.
+              </p>
+              <div className="pf-group" style={{ marginTop: 16 }}>
+                <label htmlFor="confirm">Type <strong>{deleting.name}</strong> to confirm</label>
+                <input id="confirm" value={confirmName} autoFocus
+                  onChange={(e) => setConfirmName(e.target.value)} />
+              </div>
+              <div className="pf-actions" style={{ marginTop: 16 }}>
+                <button className="pf-btn-danger" style={{ marginLeft: 0 }}
+                  disabled={!sameName(confirmName, deleting.name)} onClick={handleDelete}>
+                  Delete Permanently
+                </button>
+                <button className="pf-btn-outline" onClick={() => setDeleting(null)}>Cancel</button>
+              </div>
+            </div>
+          </div>
         )}
       </main>
     </div>
