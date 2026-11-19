@@ -12,6 +12,7 @@ const links = [
   { to: '/notifications', label: 'Notifications' },
   { to: '/profile', label: 'Profile' },
   { to: '/settings', label: 'Settings' },
+  { to: '/help', label: 'Help' },
 ];
 
 const Navbar = () => {
@@ -24,7 +25,7 @@ const Navbar = () => {
 
   return (
     <nav className="fs-navbar">
-      <div className="fs-navbar-left">
+      <div className="fs-navbar-left" onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }}>
         <Logo />
       </div>
 

@@ -9,7 +9,9 @@ const LandingPage = () => {
   return (
     <div className="landing-container">
       <nav className="landing-nav">
-        <Logo onClick={() => navigate('/')} />
+        <div onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
+          <Logo />
+        </div>
 
         <ul className="landing-nav-links">
           <li onClick={() => navigate('/')}>Overview</li>
@@ -93,7 +95,7 @@ const LandingPage = () => {
           </div>
 
           <div className="landing-showcase-card">
-            <div className="landing-card-number">03 // Clearside Pay</div>
+            <div className="landing-card-number">03 // AI ANALYST</div>
             <h3>Conversational Intelligence</h3>
             <p>
               Query your ledger in plain English to uncover spending anomalies, tax liabilities,
@@ -105,6 +107,12 @@ const LandingPage = () => {
 
       <footer className="landing-footer">
         <div>&copy; 2026 Clearside Pay. All rights reserved.</div>
+        <div className="landing-footer-links">
+          <span onClick={() => navigate('/about')}>About</span>
+          <span onClick={() => navigate('/help')}>Help & FAQ</span>
+          <span onClick={() => navigate('/contact')}>Contact</span>
+          <a href="mailto:support.clearsidepay@gmail.com">support.clearsidepay@gmail.com</a>
+        </div>
         <div>Johannesburg &bull; Gauteng &bull; South Africa</div>
       </footer>
     </div>

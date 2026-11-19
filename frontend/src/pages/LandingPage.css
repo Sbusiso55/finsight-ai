@@ -501,4 +501,23 @@ button[type="submit"]:hover {
     grid-template-columns: 1fr;
     gap: 16px;
   }
+  
+}.landing-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  justify-content: center;
+}
+
+.landing-footer-links span,
+.landing-footer-links a {
+  color: #A3A3A3;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.landing-footer-links span:hover,
+.landing-footer-links a:hover {
+  color: #E5E5E5;
 }
