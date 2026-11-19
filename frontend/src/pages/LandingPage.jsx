@@ -93,7 +93,7 @@ const LandingPage = () => {
           </div>
 
           <div className="landing-showcase-card">
-            <div className="landing-card-number">03 // FINSIGHT AI</div>
+            <div className="landing-card-number">03 // Clearside Pay</div>
             <h3>Conversational Intelligence</h3>
             <p>
               Query your ledger in plain English to uncover spending anomalies, tax liabilities,
@@ -104,7 +104,7 @@ const LandingPage = () => {
       </section>
 
       <footer className="landing-footer">
-        <div>&copy; 2026 FinSight AI. All rights reserved.</div>
+        <div>&copy; 2026 Clearside Pay. All rights reserved.</div>
         <div>Johannesburg &bull; Gauteng &bull; South Africa</div>
       </footer>
     </div>

@@ -217,7 +217,7 @@ const Dashboard = () => {
           </button>
           <button className="fnb-action-tile" onClick={() => navigate('/ask-ai')}>
             <div className="fnb-action-icon">AI</div>
-            <span>Ask FinSight</span>
+            <span>Ask Clearside Pay</span>
           </button>
           <button className="fnb-action-tile" onClick={() => navigate('/reports')}>
             <div className="fnb-action-icon">%</div>
