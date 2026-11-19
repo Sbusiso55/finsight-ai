@@ -14,6 +14,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import BusinessSetup from './pages/BusinessSetup';
 import About from './pages/About';
 import Contact from './pages/Contact';
+import Help from './pages/Help';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/help" element={<Help />} />
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
         <Route path="/add-transaction" element={<ProtectedRoute><AddTransaction /></ProtectedRoute>} />
