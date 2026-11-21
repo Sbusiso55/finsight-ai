@@ -1,0 +1,141 @@
+:root {
+  --cs-black: #0B0B0C;
+  --cs-surface: #141416;
+  --cs-card: #18181B;
+  --cs-line: rgba(229, 229, 229, 0.08);
+  --cs-platinum: #E5E5E5;
+  --cs-text: #F5F5F5;
+  --cs-muted: #A3A3A3;
+  --cs-green: #34D399;
+}
+
+body {
+  background: var(--cs-black);
+}
+
+.cs-studio {
+  position: relative;
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 70% 45% at 50% -5%, rgba(255, 255, 255, 0.09), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 110%, rgba(255, 255, 255, 0.03), transparent 70%),
+    var(--cs-black);
+  color: var(--cs-text);
+  isolation: isolate;
+}
+
+.cs-studio::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.cs-studio::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.6) 100%);
+}
+
+.cs-metal {
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 40%),
+    var(--cs-card);
+  border: 1px solid var(--cs-line);
+  border-top-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: transform 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+.cs-metal:hover {
+  transform: translateY(-4px);
+  border-color: rgba(229, 229, 229, 0.25);
+  box-shadow: 0 28px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.cs-platinum-text {
+  background: linear-gradient(180deg, #FFFFFF 0%, #D4D4D4 55%, #9CA3AF 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.cs-reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.9s ease, transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.cs-reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cs-reveal { opacity: 1; transform: none; transition: none; }
+  .cs-metal, .cs-metal:hover { transition: none; transform: none; }
+}
+.cs-studio.about-layout,
+.cs-studio.auth-container {
+  background:
+    radial-gradient(ellipse 70% 45% at 50% -5%, rgba(255, 255, 255, 0.09), transparent 70%),
+    #0B0B0C;
+}
+
+.cs-split.cs-reveal { opacity: 1; transform: none; }
+.cs-word { display: inline-block; white-space: nowrap; }
+.cs-char {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(0.5em);
+  filter: blur(8px);
+  transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), filter 0.7s ease;
+}
+.cs-split.is-visible .cs-char { opacity: 1; transform: none; filter: none; }
+
+.cs-has-cursor, .cs-has-cursor * { cursor: none !important; }
+.cs-has-cursor input, .cs-has-cursor textarea { cursor: text !important; }
+.cs-cursor-dot, .cs-cursor-ring {
+  position: fixed; top: 0; left: 0; z-index: 9999;
+  pointer-events: none; border-radius: 50%;
+}
+.cs-cursor-dot { width: 6px; height: 6px; margin: -3px 0 0 -3px; background: #F5F5F5; }
+.cs-cursor-ring {
+  width: 36px; height: 36px; margin: -18px 0 0 -18px;
+  border: 1px solid rgba(229, 229, 229, 0.5);
+  transition: width 0.25s ease, height 0.25s ease, margin 0.25s ease, background 0.25s ease;
+}
+.cs-cursor-ring.is-hover {
+  width: 64px; height: 64px; margin: -32px 0 0 -32px;
+  background: rgba(229, 229, 229, 0.08);
+}
+
+.cs-magnetic { display: inline-block; transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1); }
+
+.cs-page { animation: cs-page-in 0.6s ease both; }
+@keyframes cs-page-in { from { opacity: 0; } to { opacity: 1; } }
+
+.cs-loader {
+  position: fixed; inset: 0; z-index: 200;
+  background: #0B0B0C;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
+  transition: opacity 0.8s ease, visibility 0.8s ease;
+}
+.cs-loader.is-done { opacity: 0; visibility: hidden; }
+.cs-loader-bar { width: 160px; height: 1px; background: rgba(229, 229, 229, 0.12); overflow: hidden; }
+.cs-loader-bar span {
+  display: block; width: 40%; height: 100%; background: #E5E5E5;
+  animation: cs-load 1.2s ease-in-out infinite;
+}
+@keyframes cs-load { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .cs-char { opacity: 1; transform: none; filter: none; transition: none; }
+  .cs-page, .cs-loader-bar span { animation: none; }
+}

@@ -1,12 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Clearside Pay - Smart financial insight for small businesses" />
+    <meta name="theme-color" content="#0B0B0C" />
+    <meta name="description" content="Clearside Pay gives South African small businesses a clear, live view of their money." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <script>
+      try { document.documentElement.dataset.theme = localStorage.getItem('cs-theme') || 'dark'; }
+      catch (e) { document.documentElement.dataset.theme = 'dark'; }
+    </script>
     <title>Clearside Pay</title>
-</head>
-<body>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run Clearside Pay.</noscript>
     <div id="root"></div>
-</body>
+  </body>
 </html>

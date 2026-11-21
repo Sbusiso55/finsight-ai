@@ -105,3 +105,19 @@
   .about-grid-2 { grid-template-columns: 1fr; }
   .about-values { grid-template-columns: 1fr 1fr; }
 }
+.about-layout {
+  background:
+    radial-gradient(ellipse 70% 45% at 50% -5%, rgba(255, 255, 255, 0.09), transparent 70%),
+    #0B0B0C;
+}
+.about-card {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 40%), #18181B;
+  border-top-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+.about-hero h1 {
+  background: linear-gradient(180deg, #FFFFFF 0%, #D4D4D4 55%, #9CA3AF 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}

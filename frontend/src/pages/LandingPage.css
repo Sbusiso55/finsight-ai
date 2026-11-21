@@ -8,7 +8,7 @@ body, html {
   background-color: #1A1A1A;
   color: #FFFFFF;
   width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .landing-container {
@@ -16,7 +16,7 @@ body, html {
   color: #FFFFFF;
   font-family: 'DM Sans', sans-serif;
   min-height: 100vh;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .landing-nav {
@@ -104,78 +104,6 @@ body, html {
 .landing-btn-lg {
   padding: 14px 32px;
   font-size: 14px;
-}
-
-.landing-hero {
-  position: relative;
-  padding: 160px 64px 80px 64px;
-  min-height: 85vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  background: linear-gradient(180deg, rgba(20, 20, 20, 0.3) 0%, #1A1A1A 95%);
-  overflow: hidden;
-}
-
-.landing-hero::before {
-  content: '';
-  position: absolute;
-  right: 5%;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 400px;
-  height: 400px;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='16,2 30,10 30,22 16,30 2,22 2,10' stroke='%23E5E5E5' stroke-width='0.6' fill='rgba(229, 229, 229, 0.015)'/%3E%3Cpath d='M10 22V10H20' stroke='%23E5E5E5' stroke-width='0.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-size: contain;
-  opacity: 0.08;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.landing-hero-ambient {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 75% 30%, rgba(229, 229, 229, 0.08), transparent 55%);
-  pointer-events: none;
-}
-
-.landing-hero-content {
-  position: relative;
-  z-index: 2;
-  max-width: 900px;
-}
-
-.landing-hero-tag {
-  display: inline-block;
-  color: #E5E5E5;
-  font-size: 12px;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  margin-bottom: 20px;
-  font-weight: 700;
-}
-
-.landing-hero h1 {
-  font-size: 54px;
-  font-weight: 700;
-  line-height: 1.1;
-  margin-bottom: 24px;
-  letter-spacing: -1px;
-}
-
-.landing-hero p {
-  font-size: 17px;
-  color: #B0B0B0;
-  max-width: 600px;
-  line-height: 1.6;
-  margin-bottom: 36px;
-}
-
-.landing-hero-cta {
-  display: flex;
-  gap: 16px;
-  align-items: center;
 }
 
 .landing-specs-bar {
@@ -445,64 +373,7 @@ button[type="submit"]:hover {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-@media (max-width: 900px) {
-  .landing-nav { 
-    padding: 12px 16px; 
-  }
-  .landing-nav-links { 
-    display: none; 
-  }
-  .landing-nav-actions {
-    gap: 6px;
-  }
-  .landing-nav-actions .landing-btn-outline,
-  .landing-nav-actions .landing-btn-gold {
-    padding: 6px 10px;
-    font-size: 10px;
-  }
-  .landing-hero { 
-    padding: 120px 24px 60px 24px; 
-  }
-  .landing-hero h1 { 
-    font-size: 36px; 
-  }
-  .landing-hero::before { 
-    width: 250px; 
-    height: 250px; 
-    right: 2%; 
-  }
-  .landing-hero-cta { 
-    flex-direction: column; 
-    align-items: stretch; 
-  }
-  .landing-specs-bar, .landing-grid-3 { 
-    grid-template-columns: 1fr; 
-    gap: 20px; 
-  }
-  .landing-showcase { 
-    padding: 60px 24px; 
-  }
-  .landing-footer { 
-    flex-direction: column; 
-    gap: 12px; 
-    padding: 30px 24px; 
-    text-align: center; 
-  }
-}
-
-@media (max-width: 600px) {
-  .signup-card,
-  .auth-card,
-  .register-card,
-  .login-card {
-    padding: 32px 20px;
-  }
-  .form-row {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-  
-}.landing-footer-links {
+.landing-footer-links {
   display: flex;
   flex-wrap: wrap;
   gap: 18px;
@@ -520,4 +391,48 @@ button[type="submit"]:hover {
 .landing-footer-links span:hover,
 .landing-footer-links a:hover {
   color: #E5E5E5;
+}
+
+@media (max-width: 900px) {
+  .landing-nav {
+    padding: 12px 16px;
+  }
+  .landing-nav-links {
+    display: none;
+  }
+  .landing-nav-actions {
+    gap: 6px;
+  }
+  .landing-nav-actions .landing-btn-outline,
+  .landing-nav-actions .landing-btn-gold {
+    padding: 6px 10px;
+    font-size: 10px;
+  }
+  .landing-specs-bar,
+  .landing-grid-3 {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .landing-showcase {
+    padding: 60px 24px;
+  }
+  .landing-footer {
+    flex-direction: column;
+    gap: 12px;
+    padding: 30px 24px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .signup-card,
+  .auth-card,
+  .register-card,
+  .login-card {
+    padding: 32px 20px;
+  }
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 }

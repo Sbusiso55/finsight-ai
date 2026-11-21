@@ -1,0 +1,63 @@
+html[data-theme='light'] .fnb-dashboard-layout,
+html[data-theme='light'] .fnb-dashboard-container { background: #F4F4F2; color: #141416; }
+
+html[data-theme='light'] .fnb-greeting,
+html[data-theme='light'] .fnb-panel-header h2,
+html[data-theme='light'] .fnb-tx-row h4,
+html[data-theme='light'] .fnb-metric-card h3,
+html[data-theme='light'] .fnb-bar-labels { color: #141416; }
+
+html[data-theme='light'] .fnb-subgreeting,
+html[data-theme='light'] .fnb-status-text,
+html[data-theme='light'] .fnb-tx-row p,
+html[data-theme='light'] .fnb-metric-card span,
+html[data-theme='light'] .fnb-account-meta,
+html[data-theme='light'] .fnb-account-tag { color: #52525B; }
+
+html[data-theme='light'] .fnb-select {
+  background: #FFFFFF;
+  color: #141416;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+html[data-theme='light'] .fnb-account-card {
+  background: linear-gradient(160deg, #FFFFFF 0%, #EDEDEB 100%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
+  color: #141416;
+}
+html[data-theme='light'] .fnb-account-balance { color: #141416; }
+html[data-theme='light'] .fnb-primary-cta { background: #141416; color: #F5F5F5; border-color: #141416; }
+
+html[data-theme='light'] .fnb-action-tile {
+  background: #FFFFFF;
+  color: #141416;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+html[data-theme='light'] .fnb-action-icon { background: #141416; color: #F5F5F5; }
+
+html[data-theme='light'] .fnb-panel,
+html[data-theme='light'] .fnb-metric-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.05);
+}
+html[data-theme='light'] .fnb-panel-header button {
+  color: #141416;
+  border-color: rgba(0, 0, 0, 0.2);
+  background: transparent;
+}
+
+html[data-theme='light'] .fnb-tx-row { border-color: rgba(0, 0, 0, 0.06); }
+html[data-theme='light'] .fnb-bar-track { background: rgba(0, 0, 0, 0.08); }
+html[data-theme='light'] .fnb-bar-fill { background: #141416; }
+html[data-theme='light'] .fnb-positive { color: #059669; }
+html[data-theme='light'] .fnb-negative { color: #DC2626; }
+
+html[data-theme='light'] .pf-modal-backdrop { background: rgba(0, 0, 0, 0.35); }
+html[data-theme='light'] .pf-details dd,
+html[data-theme='light'] .pf-identity h2,
+html[data-theme='light'] .pf-header h1 { color: #141416; }
+html[data-theme='light'] .pf-biz-row { border-color: rgba(0, 0, 0, 0.06); }
+html[data-theme='light'] .pf-alert.info { border-left-color: #141416; }
+html[data-theme='light'] .pf-message.success { color: #141416; }
