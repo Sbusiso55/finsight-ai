@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import Logo from './Logo';
+import { PrefToggles } from './fx/Prefs';
 import './Navbar.css';
 
 const links = [
@@ -41,9 +42,10 @@ const Navbar = () => {
         ))}
       </div>
 
-      <button className="fs-signout-btn" onClick={handleSignOut}>
-        Sign Out
-      </button>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0 }}>
+        <PrefToggles />
+        <button className="fs-signout-btn" onClick={handleSignOut}>Sign Out</button>
+      </div>
     </nav>
   );
 };
