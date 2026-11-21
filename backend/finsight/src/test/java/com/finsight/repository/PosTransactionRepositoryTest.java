@@ -61,10 +61,53 @@ class PosTransactionRepositoryTest {
     @Test
     void duplicateCheckAndLookup() {
         data.payment(SHOP, "yoco_abc", "100.00", PosTransactionStatus.SUCCESS, T0);
-        assertThat(payments.existsByProviderTransactionId("yoco_abc")).isTrue();
-        assertThat(payments.existsByProviderTransactionId("yoco_zzz")).isFalse();
-        assertThat(payments.findByProviderTransactionId("yoco_abc")).isPresent();
-        assertThat(payments.findByProviderTransactionId("yoco_zzz")).isEmpty();
+        assertThat(payments.existsByProviderAndProviderTransactionId(PaymentProvider.YOCO, "yoco_abc")).isTrue();
+        assertThat(payments.existsByProviderAndProviderTransactionId(PaymentProvider.YOCO, "yoco_zzz")).isFalse();
+        assertThat(payments.findByProviderAndProviderTransactionId(PaymentProvider.YOCO, "yoco_abc")).isPresent();
+        assertThat(payments.findByProviderAndProviderTransactionId(PaymentProvider.YOCO, "yoco_zzz")).isEmpty();
+    }
+
+    @Test
+    void lookupsDoNotMatchAnotherProvidersPayment() {
+        data.payment(PaymentProvider.YOCO, SHOP, "shared_id", "100.00", PosTransactionStatus.SUCCESS, T0);
+        assertThat(payments.existsByProviderAndProviderTransactionId(PaymentProvider.PAYSTACK, "shared_id")).isFalse();
+        assertThat(payments.findByProviderAndProviderTransactionId(PaymentProvider.PAYSTACK, "shared_id")).isEmpty();
+    }
+
+    @Test
+    void sameIdFromYocoAndPaystackIsAllowed() {
+        PosTransaction yoco = data.payment(PaymentProvider.YOCO, SHOP, "shared_id", "100.00", PosTransactionStatus.SUCCESS, T0);
+        PosTransaction paystack = data.payment(PaymentProvider.PAYSTACK, SHOP, "shared_id", "200.00", PosTransactionStatus.SUCCESS, T0);
+        assertThat(yoco.getId()).isNotNull();
+        assertThat(paystack.getId()).isNotNull().isNotEqualTo(yoco.getId());
+        assertThat(payments.findByProviderAndProviderTransactionId(PaymentProvider.YOCO, "shared_id")
+                .orElseThrow().getAmount()).isEqualByComparingTo("100.00");
+        assertThat(payments.findByProviderAndProviderTransactionId(PaymentProvider.PAYSTACK, "shared_id")
+                .orElseThrow().getAmount()).isEqualByComparingTo("200.00");
+    }
+
+    @Test
+    void sameIdFromTheSameProviderIsStillRejected() {
+        data.payment(PaymentProvider.PAYSTACK, SHOP, "shared_id", "100.00", PosTransactionStatus.SUCCESS, T0);
+        assertRejected(() -> data.payment(PaymentProvider.PAYSTACK, SHOP, "shared_id", "100.00", PosTransactionStatus.SUCCESS, T0));
+    }
+
+    // ---- updatedAt
+
+    @Test
+    void updatedAtIsEmptyUntilThePaymentChanges() {
+        PosTransaction t = data.payment(SHOP, "a", "10.00", PosTransactionStatus.PENDING, T0);
+        assertThat(t.getUpdatedAt()).isNull();
+    }
+
+    @Test
+    void changingTheStatusSetsUpdatedAt() {
+        PosTransaction t = data.payment(SHOP, "a", "10.00", PosTransactionStatus.PENDING, T0);
+        LocalDateTime before = LocalDateTime.now().minusSeconds(1);
+        t.setStatus(PosTransactionStatus.SUCCESS);
+        em.flush();
+        assertThat(t.getUpdatedAt()).isNotNull().isAfterOrEqualTo(before);
+        assertThat(t.getCreatedAt()).isEqualTo(T0);   // creation time is untouched
     }
 
     // ---- defaults
@@ -125,7 +168,7 @@ class PosTransactionRepositoryTest {
     void amountsKeepTwoDecimalPlaces() {
         data.payment(SHOP, "a", "1234.56", PosTransactionStatus.SUCCESS, T0);
         em.clear();
-        assertThat(payments.findByProviderTransactionId("a").orElseThrow().getAmount()).isEqualByComparingTo("1234.56");
+        assertThat(payments.findByProviderAndProviderTransactionId(PaymentProvider.YOCO, "a").orElseThrow().getAmount()).isEqualByComparingTo("1234.56");
     }
 
     // ---- feed and counts

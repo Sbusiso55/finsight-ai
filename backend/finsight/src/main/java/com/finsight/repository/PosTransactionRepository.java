@@ -1,6 +1,7 @@
 package com.finsight.repository;
 
 import com.finsight.model.PosTransaction;
+import com.finsight.model.enums.PaymentProvider;
 import com.finsight.model.enums.PosTransactionStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,9 +19,10 @@ import java.util.Optional;
  */
 public interface PosTransactionRepository extends JpaRepository<PosTransaction, Long> {
 
-    boolean existsByProviderTransactionId(String providerTransactionId);
+    boolean existsByProviderAndProviderTransactionId(PaymentProvider provider, String providerTransactionId);
 
-    Optional<PosTransaction> findByProviderTransactionId(String providerTransactionId);
+    Optional<PosTransaction> findByProviderAndProviderTransactionId(PaymentProvider provider,
+                                                                    String providerTransactionId);
 
     Page<PosTransaction> findByBusinessIdOrderByCreatedAtDesc(Long businessId, Pageable pageable);
 

@@ -20,7 +20,6 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, Lo
             order by m.scannedAt desc
             """)
     Page<StockMovement> findByBusinessId(@Param("businessId") Long businessId, Pageable pageable);
-
     @Query("""
             select coalesce(sum(case when m.type = com.finsight.model.enums.StockMovementType.IN
                                      then m.quantity else -m.quantity end), 0L)

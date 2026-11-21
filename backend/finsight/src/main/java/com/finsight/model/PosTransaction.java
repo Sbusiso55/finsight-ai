@@ -12,12 +12,13 @@ import java.time.LocalDateTime;
 
 /**
  * One card machine payment reported by a payment provider.
- * providerTransactionId is unique, so the same payment (e.g. a repeated webhook) can never be saved twice.
+ * The pair (provider, providerTransactionId) is unique, so the same payment (e.g. a repeated webhook)
+ * can never be saved twice, while two different providers may happen to use the same id.
  */
 @Entity
 @Table(name = "pos_transactions",
         uniqueConstraints = @UniqueConstraint(name = "uk_pos_transactions_provider_txn_id",
-                columnNames = "provider_transaction_id"),
+                columnNames = {"provider", "provider_transaction_id"}),
         indexes = @Index(name = "idx_pos_transactions_business_time", columnList = "business_id, createdAt"))
 @Getter
 @Setter
@@ -31,7 +32,7 @@ public class PosTransaction {
     private Long businessId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "provider", nullable = false)
     private PaymentProvider provider;
 
     @Column(name = "provider_transaction_id", nullable = false)
@@ -51,8 +52,15 @@ public class PosTransaction {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    private LocalDateTime updatedAt;
+
     @PrePersist
     void onCreate() {
         if (createdAt == null) createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 }

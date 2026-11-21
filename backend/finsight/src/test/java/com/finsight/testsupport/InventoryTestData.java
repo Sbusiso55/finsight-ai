@@ -68,9 +68,14 @@ public class InventoryTestData {
 
     public PosTransaction payment(Long businessId, String providerTxnId, String amount,
                                   PosTransactionStatus status, LocalDateTime at) {
+        return payment(PaymentProvider.YOCO, businessId, providerTxnId, amount, status, at);
+    }
+
+    public PosTransaction payment(PaymentProvider provider, Long businessId, String providerTxnId, String amount,
+                                  PosTransactionStatus status, LocalDateTime at) {
         PosTransaction t = new PosTransaction();
         t.setBusinessId(businessId);
-        t.setProvider(PaymentProvider.YOCO);
+        t.setProvider(provider);
         t.setProviderTransactionId(providerTxnId);
         t.setAmount(new BigDecimal(amount));
         t.setPaymentMethod(PaymentMethod.TAP);
