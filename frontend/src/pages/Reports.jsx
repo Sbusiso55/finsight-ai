@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import ProLock from '../components/ProLock';
+import useSubscription from '../hooks/useSubscription';
 import api from '../api/axiosConfig';
 import './Reports.css';
+
+const FREE_MONTHS = 3;
 
 const formatCurrency = (amount) => {
   const num = Number(amount) || 0;
@@ -19,6 +23,7 @@ const getPeriodOptions = () => {
     return {
       value: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
       label: i === 0 ? 'This month' : d.toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' }),
+      proOnly: i >= FREE_MONTHS,
     };
   });
 };
@@ -37,12 +42,17 @@ const valueOf = (r, fallback) => (r.status === 'fulfilled' ? r.value.data ?? fal
 
 const Reports = () => {
   const navigate = useNavigate();
+  const { isPro } = useSubscription();
+  const periodOptions = getPeriodOptions();
   const [businesses, setBusinesses] = useState([]);
   const [businessesLoaded, setBusinessesLoaded] = useState(false);
   const [selectedBusinessId, setSelectedBusinessId] = useState(null);
-  const [period, setPeriod] = useState(getPeriodOptions()[0].value);
+  const [period, setPeriod] = useState(periodOptions[0].value);
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const selectedOption = periodOptions.find((p) => p.value === period);
+  const periodLocked = !isPro && selectedOption?.proOnly;
 
   useEffect(() => {
     const load = async () => {
@@ -116,6 +126,80 @@ const Reports = () => {
   const breakdown = Object.entries(report?.breakdown || {}).sort((a, b) => Number(b[1]) - Number(a[1]));
   const maxBar = Math.max(revenue, expenses, 1);
 
+  const summaryCards = (
+    <div className="rep-grid">
+      <div className="rep-card">
+        <span>Total Revenue</span>
+        <h3 className="rep-pos">{formatCurrency(revenue)}</h3>
+      </div>
+      <div className="rep-card">
+        <span>Total Expenses</span>
+        <h3 className="rep-neg">{formatCurrency(expenses)}</h3>
+      </div>
+      <div className="rep-card">
+        <span>Net Profit</span>
+        <h3 className={profit >= 0 ? 'rep-pos' : 'rep-neg'}>{formatCurrency(profit)}</h3>
+      </div>
+      <div className="rep-card">
+        <span>Net Profit Margin</span>
+        <h3>{margin.toFixed(2)}%</h3>
+      </div>
+    </div>
+  );
+
+  const incomeVsExpenses = (
+    <div className="rep-card">
+      <h2 className="rep-section-title">Income vs Expenses</h2>
+      <div className="rep-bar-item">
+        <div className="rep-bar-labels"><span>Income</span><span>{formatCurrency(revenue)}</span></div>
+        <div className="rep-bar-track">
+          <div className="rep-bar-fill rep-fill-pos" style={{ width: `${(revenue / maxBar) * 100}%` }} />
+        </div>
+      </div>
+      <div className="rep-bar-item">
+        <div className="rep-bar-labels"><span>Expenses</span><span>{formatCurrency(expenses)}</span></div>
+        <div className="rep-bar-track">
+          <div className="rep-bar-fill rep-fill-neg" style={{ width: `${(expenses / maxBar) * 100}%` }} />
+        </div>
+      </div>
+    </div>
+  );
+
+  const expenseBreakdown = (
+    <div className="rep-card">
+      <h2 className="rep-section-title">Expense Breakdown</h2>
+      {breakdown.length > 0 ? (
+        breakdown.map(([category, raw]) => {
+          const amount = Number(raw) || 0;
+          const pct = expenses > 0 ? (amount / expenses) * 100 : 0;
+          return (
+            <div className="rep-bar-item" key={category}>
+              <div className="rep-bar-labels">
+                <span>{category}</span>
+                <span>{formatCurrency(amount)} ({pct.toFixed(1)}%)</span>
+              </div>
+              <div className="rep-bar-track">
+                <div className="rep-bar-fill" style={{ width: `${Math.min(100, pct)}%` }} />
+              </div>
+            </div>
+          );
+        })
+      ) : (
+        <p className="rep-msg">No expenses in this period.</p>
+      )}
+    </div>
+  );
+
+  const fullReport = (
+    <>
+      {summaryCards}
+      <div className="rep-lower">
+        <ProLock feature="Income vs Expenses">{incomeVsExpenses}</ProLock>
+        {expenseBreakdown}
+      </div>
+    </>
+  );
+
   return (
     <div className="rep-layout">
       <Navbar />
@@ -138,8 +222,10 @@ const Reports = () => {
               </select>
             )}
             <select className="rep-select" value={period} onChange={(e) => setPeriod(e.target.value)}>
-              {getPeriodOptions().map((p) => (
-                <option key={p.value} value={p.value}>{p.label}</option>
+              {periodOptions.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}{!isPro && p.proOnly ? ' (Pro)' : ''}
+                </option>
               ))}
             </select>
           </div>
@@ -147,68 +233,10 @@ const Reports = () => {
 
         {loading ? (
           <p className="rep-msg">Generating report...</p>
+        ) : periodLocked ? (
+          <ProLock feature="History older than 3 months">{fullReport}</ProLock>
         ) : (
-          <>
-            <div className="rep-grid">
-              <div className="rep-card">
-                <span>Total Revenue</span>
-                <h3 className="rep-pos">{formatCurrency(revenue)}</h3>
-              </div>
-              <div className="rep-card">
-                <span>Total Expenses</span>
-                <h3 className="rep-neg">{formatCurrency(expenses)}</h3>
-              </div>
-              <div className="rep-card">
-                <span>Net Profit</span>
-                <h3 className={profit >= 0 ? 'rep-pos' : 'rep-neg'}>{formatCurrency(profit)}</h3>
-              </div>
-              <div className="rep-card">
-                <span>Net Profit Margin</span>
-                <h3>{margin.toFixed(2)}%</h3>
-              </div>
-            </div>
-
-            <div className="rep-lower">
-              <div className="rep-card">
-                <h2 className="rep-section-title">Income vs Expenses</h2>
-                <div className="rep-bar-item">
-                  <div className="rep-bar-labels"><span>Income</span><span>{formatCurrency(revenue)}</span></div>
-                  <div className="rep-bar-track">
-                    <div className="rep-bar-fill rep-fill-pos" style={{ width: `${(revenue / maxBar) * 100}%` }} />
-                  </div>
-                </div>
-                <div className="rep-bar-item">
-                  <div className="rep-bar-labels"><span>Expenses</span><span>{formatCurrency(expenses)}</span></div>
-                  <div className="rep-bar-track">
-                    <div className="rep-bar-fill rep-fill-neg" style={{ width: `${(expenses / maxBar) * 100}%` }} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="rep-card">
-                <h2 className="rep-section-title">Expense Breakdown</h2>
-                {breakdown.length > 0 ? (
-                  breakdown.map(([category, raw]) => {
-                    const amount = Number(raw) || 0;
-                    const pct = expenses > 0 ? (amount / expenses) * 100 : 0;
-                    return (
-                      <div className="rep-bar-item" key={category}>
-                        <div className="rep-bar-labels">
-                          <span>{category}</span>
-                          <span>{formatCurrency(amount)} ({pct.toFixed(1)}%)</span>
-                        </div>
-                        <div className="rep-bar-track">
-                          <div className="rep-bar-fill" style={{ width: `${Math.min(100, pct)}%` }} />
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <p className="rep-msg">No expenses in this period.</p>
-                )}
-              </div>
-            </div>
-          </>
+          fullReport
         )}
       </main>
     </div>
