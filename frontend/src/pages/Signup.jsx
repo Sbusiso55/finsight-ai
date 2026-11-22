@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import Logo from '../components/Logo';
+import Reveal from '../components/Reveal';
+import { PrefToggles } from '../components/fx/Prefs';
 import './Signup.css';
 
+const EMPTY_FORM = { fullName: '', email: '', phoneNumber: '', password: '' };
+
 const Signup = () => {
-  const [form, setForm] = useState({ fullName: '', email: '', phoneNumber: '', password: '' });
+  const [form, setForm] = useState(EMPTY_FORM);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -17,50 +21,59 @@ const Signup = () => {
     setError('');
     setLoading(true);
     try {
-      await axios.post('http://localhost:8080/auth/signup', form);
+      await axios.post('http://localhost:8080/auth/signup', form, { timeout: 15000 });
       navigate('/login');
     } catch (err) {
-      setError(err.response?.data?.message || err.response?.data || 'Could not create account');
+      if (!err.response) {
+        setError('Cannot reach the server. Please try again.');
+      } else {
+        const data = err.response.data;
+        setError(data?.message || (typeof data === 'string' ? data : 'Could not create account'));
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <div className="auth-logo-wrapper">
+    <div className="auth-container cs-studio">
+      <div style={{ position: 'fixed', top: 20, right: 24, zIndex: 10 }}>
+        <PrefToggles />
+      </div>
+
+      <Reveal className="auth-card cs-metal">
+        <div className="auth-logo-wrapper" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
           <Logo />
         </div>
 
         <div className="auth-header">
-          <h2>Create your account.</h2>
-          <p>Start understanding your business finances today.</p>
+          <h2 className="cs-platinum-text">Create your account.</h2>
+          <p>Start with 30 days of Pro, free. No card needed.</p>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="auth-form-group">
-            <label>Full Name</label>
-            <input name="fullName" type="text" placeholder="Kevin Dlamini"
+            <label htmlFor="fullName">Full Name</label>
+            <input id="fullName" name="fullName" type="text" placeholder="Your full name" autoComplete="name"
               value={form.fullName} onChange={handleChange} required />
           </div>
 
           <div className="auth-form-group">
-            <label>Email Address</label>
-            <input name="email" type="email" placeholder="kevin@company.co.za"
+            <label htmlFor="email">Email Address</label>
+            <input id="email" name="email" type="email" placeholder="you@company.co.za" autoComplete="email"
               value={form.email} onChange={handleChange} required />
           </div>
 
           <div className="auth-form-group">
-            <label>Phone Number</label>
-            <input name="phoneNumber" type="tel" placeholder="082 123 4567"
+            <label htmlFor="phoneNumber">Phone Number</label>
+            <input id="phoneNumber" name="phoneNumber" type="tel" placeholder="082 123 4567" autoComplete="tel"
               value={form.phoneNumber} onChange={handleChange} required />
           </div>
 
           <div className="auth-form-group">
-            <label>Password</label>
-            <input name="password" type="password" placeholder="••••••••"
-              value={form.password} onChange={handleChange} required minLength={8} />
+            <label htmlFor="password">Password</label>
+            <input id="password" name="password" type="password" placeholder="At least 8 characters"
+              autoComplete="new-password" value={form.password} onChange={handleChange} required minLength={8} />
           </div>
 
           {error && <p className="auth-error">{error}</p>}
@@ -71,9 +84,12 @@ const Signup = () => {
         </form>
 
         <div className="auth-footer-text">
-          Already have an account? <a href="/login">Sign In</a>
+          Already have an account? <Link to="/login">Sign In</Link>
         </div>
-      </div>
+        <div className="auth-footer-text" style={{ marginTop: 0 }}>
+          By signing up you agree to our <Link to="/privacy">Privacy Policy</Link>.
+        </div>
+      </Reveal>
     </div>
   );
 };
