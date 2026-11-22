@@ -5,6 +5,7 @@ import { PrefsProvider } from './components/fx/Prefs';
 import './styles/theme.css';
 import './styles/light.css';
 import './styles/light-app.css';
+import './styles/AppMotion.css';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
