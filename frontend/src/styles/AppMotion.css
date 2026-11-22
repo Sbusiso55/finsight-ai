@@ -1,0 +1,63 @@
+.am-tilt {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+  will-change: transform;
+}
+.am-tilt::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(circle at var(--shine-x, 50%) var(--shine-y, 0%), rgba(255, 255, 255, 0.10), transparent 55%);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.am-tilt:hover::after { opacity: 1; }
+
+.am-rise {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: am-rise 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+.am-d1 { animation-delay: 0.05s; }
+.am-d2 { animation-delay: 0.12s; }
+.am-d3 { animation-delay: 0.19s; }
+.am-d4 { animation-delay: 0.26s; }
+.am-d5 { animation-delay: 0.33s; }
+@keyframes am-rise { to { opacity: 1; transform: none; } }
+
+.am-lift { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+.am-lift:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25); }
+
+.am-bar { transition: width 0.7s cubic-bezier(0.2, 0.7, 0.2, 1); }
+
+.am-skeleton {
+  border-radius: 8px;
+  background: linear-gradient(90deg, rgba(229, 229, 229, 0.05) 25%, rgba(229, 229, 229, 0.12) 50%, rgba(229, 229, 229, 0.05) 75%);
+  background-size: 200% 100%;
+  animation: am-shimmer 1.4s ease-in-out infinite;
+}
+.am-skel-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; gap: 16px; }
+@keyframes am-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+html[data-theme='light'] .am-tilt::after {
+  background: radial-gradient(circle at var(--shine-x, 50%) var(--shine-y, 0%), rgba(255, 255, 255, 0.7), transparent 55%);
+}
+html[data-theme='light'] .am-lift:hover { box-shadow: 0 14px 30px rgba(0, 0, 0, 0.08); }
+html[data-theme='light'] .am-skeleton {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.04) 25%, rgba(0, 0, 0, 0.09) 50%, rgba(0, 0, 0, 0.04) 75%);
+  background-size: 200% 100%;
+}
+
+@media (max-width: 768px) {
+  .am-lift:hover { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .am-rise { opacity: 1; transform: none; animation: none; }
+  .am-tilt, .am-lift, .am-bar { transition: none; }
+  .am-lift:hover { transform: none; }
+  .am-skeleton { animation: none; }
+}
