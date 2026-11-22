@@ -36,9 +36,9 @@ const CARDS = [
 
 const SPECS = [
   ['R0,01', 'Accurate to the cent'],
-  ['ZAR', 'Built for the Rand'],
+  ['30 days', 'Of Pro free, no card needed'],
   ['1', 'Owner per business, nobody else sees your data'],
-  ['R0', 'To get started in early access'],
+  ['R0', 'Free plan, forever'],
 ];
 
 const LandingPage = () => {
@@ -112,6 +112,7 @@ const LandingPage = () => {
         </div>
         <ul className="landing-nav-links">
           <li onClick={() => navigate('/about')}>About</li>
+          <li onClick={() => navigate('/pricing')}>Pricing</li>
           <li onClick={() => navigate('/help')}>Help & FAQ</li>
           <li onClick={() => navigate('/contact')}>Contact</li>
         </ul>
@@ -154,11 +155,11 @@ const LandingPage = () => {
                 <div className="cine-cta">
                   <Magnetic>
                     <button className="landing-btn-gold landing-btn-lg" onClick={() => navigate('/signup')}>
-                      Create Free Account
+                      Start 30 Days of Pro Free
                     </button>
                   </Magnetic>
-                  <button className="landing-btn-outline landing-btn-lg" onClick={() => navigate('/about')}>
-                    Our Story
+                  <button className="landing-btn-outline landing-btn-lg" onClick={() => navigate('/pricing')}>
+                    See Pricing
                   </button>
                 </div>
               )}
@@ -196,6 +197,7 @@ const LandingPage = () => {
           <div>&copy; 2026 Clearside Pay. All rights reserved.</div>
           <div className="landing-footer-links">
             <span onClick={() => navigate('/about')}>About</span>
+            <span onClick={() => navigate('/pricing')}>Pricing</span>
             <span onClick={() => navigate('/help')}>Help & FAQ</span>
             <span onClick={() => navigate('/contact')}>Contact</span>
             <span onClick={() => navigate('/privacy')}>Privacy</span>

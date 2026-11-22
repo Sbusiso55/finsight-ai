@@ -26,7 +26,22 @@
 .cs-trial-banner.is-urgent .cs-trial-badge { background: #FBBF24; }
 .cs-trial-banner.is-free .cs-trial-badge { background: #F87171; }
 
-.cs-trial-text { flex: 1; }
+.cs-trial-text { flex: 1; line-height: 1.45; }
+
+.cs-trial-upgrade {
+  flex-shrink: 0;
+  padding: 7px 16px;
+  border-radius: 8px;
+  border: none;
+  background: #E5E5E5;
+  color: #141416;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.cs-trial-upgrade:hover { background: #FFFFFF; }
 
 .cs-trial-close {
   background: none;
@@ -43,8 +58,11 @@ html[data-theme='light'] .cs-trial-banner { background: #FFFFFF; color: #3F3F46;
 html[data-theme='light'] .cs-trial-banner.is-urgent { background: #FFFBEB; }
 html[data-theme='light'] .cs-trial-banner.is-free { background: #FEF2F2; }
 html[data-theme='light'] .cs-trial-badge { background: #141416; color: #F5F5F5; }
+html[data-theme='light'] .cs-trial-upgrade { background: #141416; color: #F5F5F5; }
+html[data-theme='light'] .cs-trial-upgrade:hover { background: #000000; }
 html[data-theme='light'] .cs-trial-close { color: #71717A; }
 
 @media (max-width: 900px) {
-  .cs-trial-banner { padding: 10px 16px; font-size: 13px; }
+  .cs-trial-banner { padding: 10px 16px; font-size: 13px; flex-wrap: wrap; }
+  .cs-trial-text { flex-basis: 100%; order: 3; }
 }

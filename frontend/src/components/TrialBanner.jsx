@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import './TrialBanner.css';
 
 const TrialBanner = () => {
+  const navigate = useNavigate();
   const [sub, setSub] = useState(null);
   const [hidden, setHidden] = useState(false);
 
@@ -29,6 +31,9 @@ const TrialBanner = () => {
           ? `You have ${sub.daysLeft} ${dayWord} of Pro features, free. No card needed and nothing will be charged. After that you keep the free plan, and all your data stays safe.`
           : 'You are on the free plan, which is free forever. All your data is safe. Upgrade any time to unlock reports, forecasts and more.'}
       </span>
+      <button type="button" className="cs-trial-upgrade" onClick={() => navigate('/pricing')}>
+        {trial ? 'See plans' : 'Upgrade'}
+      </button>
       <button type="button" className="cs-trial-close" onClick={() => setHidden(true)} aria-label="Hide banner">×</button>
     </div>
   );
