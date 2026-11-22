@@ -7,11 +7,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Permanently deletes a business and everything linked to it.
- * Children go first so no foreign key is broken. One transaction: all or nothing.
- * Callers MUST check ownership first (BusinessAccess.requireOwned).
- */
 @Service
 public class BusinessDeletionService {
 
@@ -22,22 +17,43 @@ public class BusinessDeletionService {
 
     @Transactional
     public void deleteBusinessAndData(Long businessId) {
-        // Transactions point to categories, so they must go first.
-        int tx = delete("Transaction", businessId);
-        int cust = delete("Customer", businessId);
-        int cat = delete("Category", businessId);
+        int moves = em.createQuery("DELETE FROM StockMovement m WHERE m.productId IN "
+                        + "(SELECT p.id FROM Product p WHERE p.businessId = :id)")
+                .setParameter("id", businessId)
+                .executeUpdate();
+        int alerts = em.createQuery("DELETE FROM StockAlert a WHERE a.productId IN "
+                        + "(SELECT p.id FROM Product p WHERE p.businessId = :id)")
+                .setParameter("id", businessId)
+                .executeUpdate();
+        int products = deleteByBusinessId("Product", businessId);
+        int suppliers = deleteByBusinessId("Supplier", businessId);
+        int pos = deleteByBusinessId("PosTransaction", businessId);
+        int accounts = deleteByBusinessId("PaymentProviderAccount", businessId);
+
+        int tx = deleteByBusinessRelation("Transaction", businessId);
+        int cust = deleteByBusinessRelation("Customer", businessId);
+        int cat = deleteByBusinessRelation("Category", businessId);
 
         em.createQuery("DELETE FROM Business b WHERE b.id = :id")
-          .setParameter("id", businessId)
-          .executeUpdate();
+                .setParameter("id", businessId)
+                .executeUpdate();
 
-        log.info("Deleted business {} (transactions={}, customers={}, categories={})",
-                businessId, tx, cust, cat);
+        log.info("Deleted business {} (movements={}, alerts={}, products={}, suppliers={}, posPayments={}, "
+                        + "providerAccounts={}, transactions={}, customers={}, categories={})",
+                businessId, moves, alerts, products, suppliers, pos, accounts, tx, cust, cat);
     }
 
-    private int delete(String entity, Long businessId) {
+    
+    private int deleteByBusinessId(String entity, Long businessId) {
+        return em.createQuery("DELETE FROM " + entity + " e WHERE e.businessId = :id")
+                .setParameter("id", businessId)
+                .executeUpdate();
+    }
+
+    
+    private int deleteByBusinessRelation(String entity, Long businessId) {
         return em.createQuery("DELETE FROM " + entity + " e WHERE e.business.id = :id")
-                 .setParameter("id", businessId)
-                 .executeUpdate();
+                .setParameter("id", businessId)
+                .executeUpdate();
     }
 }
