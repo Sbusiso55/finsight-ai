@@ -5,4 +5,5 @@ python-dotenv
 fastapi
 google-genai
 pydantic
-
+slowapi
+python-multipart
