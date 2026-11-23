@@ -5,6 +5,14 @@ import { usePrefs } from './Prefs';
 export const prefersReducedMotion = () =>
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/** True when the user has Data Saver on or is on a slow connection. */
+export const isDataSaver = () => {
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (!conn) return false;
+  if (conn.saveData) return true;
+  return ['slow-2g', '2g', '3g'].includes(conn.effectiveType);
+};
+
 export const detectSupport = () => {
   let webgl = false;
   try {
@@ -12,7 +20,7 @@ export const detectSupport = () => {
     webgl = !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl')));
   } catch (e) { webgl = false; }
   const lite = window.matchMedia('(max-width: 768px)').matches || (navigator.hardwareConcurrency || 8) <= 4;
-  return { cinematic: !prefersReducedMotion() && webgl, lite };
+  return { cinematic: !prefersReducedMotion() && webgl && !isDataSaver(), lite };
 };
 
 export const SplitTitle = ({ text, as = 'h2', className = '', delay = 0 }) => {
