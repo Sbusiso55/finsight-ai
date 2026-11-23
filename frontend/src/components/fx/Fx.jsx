@@ -13,14 +13,21 @@ export const isDataSaver = () => {
   return ['slow-2g', '2g', '3g'].includes(conn.effectiveType);
 };
 
+/** Phones and touch-only devices get the simple version: faster, and saves data. */
+export const isPhone = () =>
+  window.matchMedia('(max-width: 768px)').matches || window.matchMedia('(pointer: coarse)').matches;
+
 export const detectSupport = () => {
   let webgl = false;
   try {
     const c = document.createElement('canvas');
     webgl = !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl')));
   } catch (e) { webgl = false; }
-  const lite = window.matchMedia('(max-width: 768px)').matches || (navigator.hardwareConcurrency || 8) <= 4;
-  return { cinematic: !prefersReducedMotion() && webgl && !isDataSaver(), lite };
+  const lite = window.matchMedia('(max-width: 1024px)').matches || (navigator.hardwareConcurrency || 8) <= 4;
+  return {
+    cinematic: !prefersReducedMotion() && webgl && !isDataSaver() && !isPhone(),
+    lite,
+  };
 };
 
 export const SplitTitle = ({ text, as = 'h2', className = '', delay = 0 }) => {
