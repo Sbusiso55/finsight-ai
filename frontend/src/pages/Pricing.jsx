@@ -4,6 +4,7 @@ import Logo from '../components/Logo';
 import Reveal from '../components/Reveal';
 import { SplitTitle, Magnetic } from '../components/fx/Fx';
 import { PrefToggles } from '../components/fx/Prefs';
+import api from '../api/axiosConfig';
 import './LandingPage.css';
 import './LandingCinematic.css';
 import './AboutStory.css';
@@ -47,6 +48,7 @@ const FAQS = [
   ['Will I be charged when the trial ends?', 'No. You only pay if you choose a plan yourself. If you do nothing, you simply move to the free plan.'],
   ['What happens to my data on the free plan?', 'Nothing is deleted. Older records are kept safely and come back the moment you upgrade.'],
   ['Can I cancel?', 'Yes. Pro plans do not renew without your permission, and you can stop at any time.'],
+  ['Is paying safe?', 'Payments are handled by Paystack on their own secure page. Clearside Pay never sees or stores your card details.'],
   ['What currency are prices in?', 'Prices are currently shown in South African Rand, our first launch market.'],
 ];
 
@@ -56,18 +58,30 @@ const Pricing = () => {
   const navigate = useNavigate();
   const [months, setMonths] = useState(12);
   const [notice, setNotice] = useState('');
+  const [busy, setBusy] = useState(false);
   const signedIn = !!localStorage.getItem('token');
 
   const plan = DURATIONS.find((d) => d.months === months);
   const perMonth = plan.price / plan.months;
   const saving = MONTHLY * plan.months - plan.price;
 
-  const choosePro = () => {
+  const choosePro = async () => {
     if (!signedIn) {
       navigate('/signup');
       return;
     }
-    setNotice('Payments open soon. Until then your current plan carries on as normal, and you will not be charged.');
+    setBusy(true);
+    setNotice('Opening secure checkout…');
+    try {
+      const res = await api.post('/api/billing/checkout', { months }, { timeout: 20000 });
+      window.location.href = res.data.authorizationUrl;
+    } catch (err) {
+      const code = err.response?.status;
+      setNotice(code === 503
+        ? 'Payments open soon. Until then your current plan carries on as normal, and you will not be charged.'
+        : 'We could not open checkout. Please try again in a moment.');
+      setBusy(false);
+    }
   };
 
   return (
@@ -147,8 +161,8 @@ const Pricing = () => {
             {PRO_FEATURES.map((f) => <li key={f}>{f}</li>)}
           </ul>
           <Magnetic>
-            <button className="landing-btn-gold landing-btn-lg pr-cta" onClick={choosePro}>
-              {signedIn ? `Choose ${plan.label}` : 'Start 30-day free trial'}
+            <button className="landing-btn-gold landing-btn-lg pr-cta" onClick={choosePro} disabled={busy}>
+              {busy ? 'Opening checkout…' : signedIn ? `Choose ${plan.label}` : 'Start 30-day free trial'}
             </button>
           </Magnetic>
           {notice && <p className="pr-notice">{notice}</p>}

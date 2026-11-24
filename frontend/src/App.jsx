@@ -19,6 +19,7 @@ const Privacy = lazy(() => import('./pages/Privacy'));
 const Pricing = lazy(() => import('./pages/Pricing'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Notifications = lazy(() => import('./pages/Notifications'));
+const BillingCallback = lazy(() => import('./pages/BillingCallback'));
 
 const PageLoading = () => (
   <div style={{ minHeight: '100vh', background: 'var(--cs-black, #0B0B0C)' }} aria-busy="true" />
@@ -38,6 +39,7 @@ const AnimatedRoutes = () => {
           <Route path="/help" element={<Help />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/billing/callback" element={<ProtectedRoute><BillingCallback /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
           <Route path="/add-transaction" element={<ProtectedRoute><AddTransaction /></ProtectedRoute>} />
