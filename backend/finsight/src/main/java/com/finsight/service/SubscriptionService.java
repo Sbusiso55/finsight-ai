@@ -21,7 +21,6 @@ public class SubscriptionService {
         this.subscriptionRepository = subscriptionRepository;
     }
 
-    /** Returns the user's subscription, creating the 30-day trial on first use and expiring it when due. */
     @Transactional
     public Subscription getCurrent(User user) {
         Subscription sub = subscriptionRepository.findByUserId(user.getId())
@@ -35,6 +34,26 @@ public class SubscriptionService {
                 && (sub.getStatus() == SubscriptionStatus.TRIAL || sub.getStatus() == SubscriptionStatus.ACTIVE);
     }
 
+    @Transactional
+    public Subscription activatePro(User user, int months) {
+        Subscription sub = getCurrent(user);
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime start = now;
+
+        if (sub.getStatus() == SubscriptionStatus.ACTIVE
+                && sub.getCurrentPeriodEnd() != null && sub.getCurrentPeriodEnd().isAfter(now)) {
+            start = sub.getCurrentPeriodEnd();
+        } else if (sub.getStatus() == SubscriptionStatus.TRIAL && sub.getTrialEndsAt().isAfter(now)) {
+            start = sub.getTrialEndsAt();
+        }
+
+        sub.setPlan(PlanType.PRO);
+        sub.setStatus(SubscriptionStatus.ACTIVE);
+        sub.setCurrentPeriodEnd(start.plusMonths(months));
+        sub.setBillingMonths(months);
+        return subscriptionRepository.save(sub);
+    }
+
     private Subscription startTrial(User user) {
         Subscription sub = new Subscription();
         sub.setUser(user);
@@ -44,7 +63,6 @@ public class SubscriptionService {
         return subscriptionRepository.save(sub);
     }
 
-    /** Drops expired trials and paid periods to FREE. Data is never touched. */
     private Subscription refresh(Subscription sub) {
         LocalDateTime now = LocalDateTime.now();
         boolean trialOver = sub.getStatus() == SubscriptionStatus.TRIAL && now.isAfter(sub.getTrialEndsAt());
