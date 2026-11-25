@@ -24,7 +24,6 @@ def calculate_stock_forecast(
         "name",
         "quantity",
         "minStockLevel",
-        "supplierId",
     ]
 
     for field in required_product_fields:
@@ -94,7 +93,7 @@ def calculate_stock_forecast(
             "productName": product["name"],
             "currentQuantity": current_quantity,
             "minStockLevel": minimum_stock,
-            "supplierId": product["supplierId"],
+            "supplierId": product.get("supplierId"),
             "averageDailyUsage": 0,
             "estimatedDaysUntilStockout": None,
             "predictedStockoutDate": None,
@@ -143,7 +142,7 @@ def calculate_stock_forecast(
         "productName": product["name"],
         "currentQuantity": current_quantity,
         "minStockLevel": minimum_stock,
-        "supplierId": product["supplierId"],
+        "supplierId": product.get("supplierId"),
         "averageDailyUsage": round(average_daily_usage, 2),
         "estimatedDaysUntilStockout": round(days_until_stockout, 2),
         "predictedStockoutDate": stockout_date.isoformat(),

@@ -1,6 +1,10 @@
+import re
+import unicodedata
 import csv
 import io
 from datetime import datetime
+from zoneinfo import ZoneInfo
+JOHANNESBURG_TZ = ZoneInfo("Africa/Johannesburg")
 from decimal import Decimal, InvalidOperation
 
 
@@ -66,35 +70,89 @@ def normalize_header(value):
         for character in value
         if character.isalnum()
     )
+def parse_amount(value):
+    if value is None:
+        raise ValueError("Amount is missing.")
 
+    value = str(value).strip()
 
-def parse_transaction_date(value):
-    value = value.strip()
+    if not value:
+        raise ValueError("Amount is missing.")
+
+    # Remove leading currency symbols.
+    while value and (
+        value[0].isspace()
+        or unicodedata.category(value[0]) == "Sc"
+    ):
+        value = value[1:]
+
+    # Remove common currency prefixes.
+    value = re.sub(
+        r"^(ZAR|R|USD|EUR|GBP)\s*",
+        "",
+        value,
+        flags=re.IGNORECASE,
+    )
+
+    # Remove spaces used as thousands separators.
+    value = "".join(value.split())
+
+    # Handle formats containing both comma and dot.
+    if "," in value and "." in value:
+        if value.rfind(",") > value.rfind("."):
+            value = value.replace(".", "")
+            value = value.replace(",", ".")
+        else:
+            value = value.replace(",", "")
+
+    # A comma without a dot is treated as a decimal separator.
+    elif "," in value:
+        value = value.replace(",", ".")
 
     try:
-        return datetime.fromisoformat(
+        return Decimal(value)
+    except InvalidOperation:
+        raise ValueError("Invalid transaction amount.")
+def parse_transaction_date(value):
+    value = value.strip()
+    parsed_date = None
+
+    try:
+        parsed_date = datetime.fromisoformat(
             value.replace("Z", "+00:00")
-        ).isoformat()
+        )
     except ValueError:
         pass
 
-    for date_format in (
-        "%Y-%m-%d %H:%M:%S",
-        "%Y-%m-%d",
-        "%d/%m/%Y %H:%M:%S",
-        "%d/%m/%Y",
-    ):
-        try:
-            return datetime.strptime(
-                value,
-                date_format,
-            ).isoformat()
-        except ValueError:
-            continue
+    if parsed_date is None:
+        for date_format in (
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%d",
+            "%d/%m/%Y %H:%M:%S",
+            "%d/%m/%Y",
+        ):
+            try:
+                parsed_date = datetime.strptime(
+                    value,
+                    date_format,
+                )
+                break
+            except ValueError:
+                continue
 
-    raise ValueError("Invalid transaction date.")
+    if parsed_date is None:
+        raise ValueError("Invalid transaction date.")
 
+    if parsed_date.tzinfo is None:
+        parsed_date = parsed_date.replace(
+            tzinfo=JOHANNESBURG_TZ
+        )
+    else:
+        parsed_date = parsed_date.astimezone(
+            JOHANNESBURG_TZ
+        )
 
+    return parsed_date.isoformat()
 def normalize_status(value):
     normalized = value.strip().upper()
 
@@ -176,13 +234,20 @@ def import_pos_csv(file_content, provider, business_id):
     if not reader.fieldnames:
         raise ValueError("The CSV file has no header row.")
 
-    columns = {
-        field: find_column(reader.fieldnames, field)
-        for field in HEADER_ALIASES
-    }
+    columns = {}
+
+    for field in HEADER_ALIASES:
+        if field == "paymentMethod" and provider in {"SNAPSCAN", "ZAPPER"}:
+            try:
+                columns[field] = find_column(reader.fieldnames, field)
+            except ValueError:
+                columns[field] = None
+        else:
+            columns[field] = find_column(reader.fieldnames, field)
 
     imported_transactions = []
     row_errors = []
+    seen_transaction_ids = set()
     total_rows = 0
 
     for row_number, row in enumerate(reader, start=2):
@@ -197,8 +262,12 @@ def import_pos_csv(file_content, provider, business_id):
             if not transaction_id:
                 raise ValueError("Transaction ID is missing.")
 
-            amount = Decimal(
-                row[columns["amount"]].strip().replace(",", "")
+            if transaction_id in seen_transaction_ids:
+                raise ValueError("Duplicate transaction ID")
+
+            seen_transaction_ids.add(transaction_id)
+            amount = parse_amount(
+                row[columns["amount"]]
             )
 
             if not amount.is_finite() or amount <= 0:
@@ -208,10 +277,12 @@ def import_pos_csv(file_content, provider, business_id):
                 row[columns["status"]]
             )
 
-            payment_method = normalize_payment_method(
-                row[columns["paymentMethod"]]
-            )
-
+            if columns["paymentMethod"] is None:
+                payment_method = "QR"
+            else:
+                payment_method = normalize_payment_method(
+                    row[columns["paymentMethod"]]
+                )
             created_at = parse_transaction_date(
                 row[columns["createdAt"]]
             )
@@ -227,7 +298,7 @@ def import_pos_csv(file_content, provider, business_id):
                     "createdAt": created_at,
                 }
             )
-
+            seen_transaction_ids.add(transaction_id)
         except (ValueError, InvalidOperation, KeyError, AttributeError) as error:
             row_errors.append(
                 {

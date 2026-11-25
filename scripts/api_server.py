@@ -2,6 +2,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
+from typing import Optional
 import logging
 import time
 
@@ -198,12 +199,12 @@ class ProductRequest(BaseModel):
     id: int
     businessId: int
     name: str
-    barcode: str
-    qrCode: str
+    barcode: Optional[str] = None
+    qrCode: Optional[str] = None
     quantity: int = Field(ge=0)
     minStockLevel: int = Field(ge=0)
     unitPrice: float = Field(ge=0)
-    supplierId: int
+    supplierId: Optional[int] = None
 
 
 class StockMovementRequest(BaseModel):
@@ -246,7 +247,6 @@ class StockForecastRequest(BaseModel):
         500: {"description": "An internal error occurred while generating the forecast."},
     },
 )
-@limiter.limit("10/minute")
 def forecast(request: Request, data: ForecastRequest):
     try:
         forecast_value = forecast_next_month(
@@ -317,7 +317,6 @@ def financial_analysis(request: Request, data: FinancialAnalysisRequest):
         500: {"description": "An internal error occurred while generating the summary."},
     },
 )
-@limiter.limit("10/minute")
 def financial_summary(request: Request, data: FinancialSummaryRequest):
     try:
         revenue_transactions = [
@@ -362,7 +361,6 @@ def financial_summary(request: Request, data: FinancialSummaryRequest):
         500: {"description": "An internal error occurred while generating the answer."},
     },
 )
-@limiter.limit("5/minute")
 def ask_ai(request: Request, data: AskAIRequest):
     try:
         answer = ask_financial_question(
@@ -407,9 +405,8 @@ def ask_ai(request: Request, data: AskAIRequest):
         422: {"description": "Invalid request fields."},
         429: {"description": "Rate limit exceeded."},
         500: {"description": "An internal error occurred."},
-    },
+    }
 )
-@limiter.limit("10/minute")
 def fraud_detection(request: Request, data: FraudDetectionRequest):
     try:
         transactions = [
@@ -455,7 +452,6 @@ def fraud_detection(request: Request, data: FraudDetectionRequest):
         500: {"description": "An internal error occurred."},
     },
 )
-@limiter.limit("10/minute")
 def stock_forecast(request: Request, data: StockForecastRequest):
     try:
         product = data.product.model_dump()
@@ -506,7 +502,6 @@ def stock_forecast(request: Request, data: StockForecastRequest):
         500: {"description": "An internal error occurred."},
     },
 )
-@limiter.limit("5/minute")
 async def import_pos_transactions(
     request: Request,
     provider: str = Form(...),

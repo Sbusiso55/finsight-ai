@@ -1,6 +1,9 @@
 from datetime import datetime, time
 from statistics import median
 from collections import defaultdict
+from zoneinfo import ZoneInfo
+
+JOHANNESBURG_TZ = ZoneInfo("Africa/Johannesburg")
 LARGE_PAYMENT_MULTIPLIER = 3
 MINIMUM_LARGE_PAYMENT = 5000
 
@@ -10,17 +13,29 @@ RAPID_PAYMENT_COUNT = 5
 UNUSUAL_HOUR_START = 0
 UNUSUAL_HOUR_END = 5
 def parse_transaction_time(value):
-    """Convert a transaction timestamp into a datetime object."""
+    """Convert a transaction timestamp to Johannesburg time."""
 
     if isinstance(value, datetime):
-        return value
+        parsed_time = value
 
-    if isinstance(value, str):
-        return datetime.fromisoformat(
+    elif isinstance(value, str):
+        parsed_time = datetime.fromisoformat(
             value.replace("Z", "+00:00")
         )
 
-    raise ValueError("Invalid transaction timestamp.")
+    else:
+        raise ValueError("Invalid transaction timestamp.")
+
+    if parsed_time.tzinfo is None:
+        parsed_time = parsed_time.replace(
+            tzinfo=JOHANNESBURG_TZ
+        )
+    else:
+        parsed_time = parsed_time.astimezone(
+            JOHANNESBURG_TZ
+        )
+
+    return parsed_time
 def detect_payment_fraud(transactions):
     """
     Analyze payment transactions and identify suspicious activity.
