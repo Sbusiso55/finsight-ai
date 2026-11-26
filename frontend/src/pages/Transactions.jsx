@@ -19,6 +19,7 @@ const Transactions = () => {
   const [error, setError] = useState('');
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [search, setSearch] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     const loadBusinesses = async () => {
@@ -58,11 +59,14 @@ const Transactions = () => {
 
   const handleDelete = async (tx) => {
     if (!window.confirm(`Delete "${tx.description || 'this transaction'}"?`)) return;
+    setDeletingId(tx.id);
     try {
       await api.delete(`/api/transactions/${tx.id}?businessId=${selectedBusinessId}`);
       setTransactions((prev) => prev.filter((t) => t.id !== tx.id));
     } catch (err) {
       setError('Could not delete transaction');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -81,7 +85,7 @@ const Transactions = () => {
         <Navbar />
         <main className="tx-container">
           <h1 className="tx-title">Transaction Ledger</h1>
-          <div className="tx-card">
+          <div className="tx-card tx-empty">
             <p className="tx-msg">You need to set up your business first.</p>
             <button className="tx-primary-btn" onClick={() => navigate('/business-setup')}>
               Set Up Business
@@ -90,6 +94,42 @@ const Transactions = () => {
         </main>
       </div>
     );
+  }
+
+  const renderRow = (tx, i) => {
+    const isIncome = tx.type === 'INCOME';
+    return (
+      <div className="tx-row" key={tx.id} style={{ animationDelay: `${Math.min(i, 12) * 35}ms` }}>
+        <div>
+          <h4>{tx.description || 'Untitled Transaction'}</h4>
+          <p>{tx.category?.name || tx.type} &bull; {tx.transactionDate}</p>
+        </div>
+        <div className="tx-row-right">
+          <span className={`tx-amt ${isIncome ? 'tx-pos' : 'tx-neg'}`}>
+            {isIncome ? '+' : '-'} {formatCurrency(tx.amount)}
+          </span>
+          <button className="tx-delete-btn" onClick={() => handleDelete(tx)} disabled={deletingId === tx.id}>
+            {deletingId === tx.id ? '...' : 'Delete'}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  let listContent;
+  if (loading) {
+    listContent = (
+      <div className="tx-skeleton">
+        <span />
+        <span />
+        <span />
+        <span />
+      </div>
+    );
+  } else if (visible.length > 0) {
+    listContent = visible.map(renderRow);
+  } else {
+    listContent = <p className="tx-msg">No transactions found.</p>;
   }
 
   return (
@@ -107,15 +147,15 @@ const Transactions = () => {
         </div>
 
         <div className="tx-summary">
-          <div className="tx-summary-card">
+          <div className="tx-summary-card" style={{ animationDelay: '60ms' }}>
             <span>Money In</span>
             <h3 className="tx-pos">{formatCurrency(totalIn)}</h3>
           </div>
-          <div className="tx-summary-card">
+          <div className="tx-summary-card" style={{ animationDelay: '120ms' }}>
             <span>Money Out</span>
             <h3 className="tx-neg">{formatCurrency(totalOut)}</h3>
           </div>
-          <div className="tx-summary-card">
+          <div className="tx-summary-card" style={{ animationDelay: '180ms' }}>
             <span>Net</span>
             <h3>{formatCurrency(totalIn - totalOut)}</h3>
           </div>
@@ -128,8 +168,9 @@ const Transactions = () => {
             placeholder="Search description or category..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search transactions"
           />
-          <select className="tx-select" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+          <select className="tx-select" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} aria-label="Filter by type">
             <option value="ALL">All types</option>
             <option value="INCOME">Income</option>
             <option value="EXPENSE">Expenses</option>
@@ -139,6 +180,7 @@ const Transactions = () => {
               className="tx-select"
               value={selectedBusinessId || ''}
               onChange={(e) => setSelectedBusinessId(Number(e.target.value))}
+              aria-label="Choose business"
             >
               {businesses.map((b) => (
                 <option key={b.id} value={b.id}>{b.name}</option>
@@ -149,32 +191,7 @@ const Transactions = () => {
 
         <div className="tx-card">
           {error && <p className="tx-error">{error}</p>}
-
-          {loading ? (
-            <p className="tx-msg">Loading transactions...</p>
-          ) : visible.length > 0 ? (
-            visible.map((tx) => {
-              const isIncome = tx.type === 'INCOME';
-              return (
-                <div className="tx-row" key={tx.id}>
-                  <div>
-                    <h4>{tx.description || 'Untitled Transaction'}</h4>
-                    <p>{tx.category?.name || tx.type} &bull; {tx.transactionDate}</p>
-                  </div>
-                  <div className="tx-row-right">
-                    <span className={`tx-amt ${isIncome ? 'tx-pos' : 'tx-neg'}`}>
-                      {isIncome ? '+' : '-'} {formatCurrency(tx.amount)}
-                    </span>
-                    <button className="tx-delete-btn" onClick={() => handleDelete(tx)}>
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              );
-            })
-          ) : (
-            <p className="tx-msg">No transactions found.</p>
-          )}
+          {listContent}
         </div>
       </main>
     </div>

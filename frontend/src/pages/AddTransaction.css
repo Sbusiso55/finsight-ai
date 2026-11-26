@@ -1,128 +1,199 @@
 .add-trans-wrapper {
-    min-height: 100vh;
-    background: #F4F5F7;
-    font-family: 'DM Sans', sans-serif;
+  --a-bg: #121212;
+  --a-card: #1B1B1B;
+  --a-border: #2A2A2A;
+  --a-text: #EDEDED;
+  --a-muted: #9A9A9A;
+  --a-input: #161616;
+  --a-placeholder: #6B6B6B;
+  --a-accent: #EDEDED;
+  --a-accent-text: #121212;
+  --a-danger: #E5675F;
+  min-height: 100vh;
+  background: var(--a-bg);
+  color: var(--a-text);
+  font-family: 'DM Sans', sans-serif;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+:root[data-theme="light"] .add-trans-wrapper,
+body.light .add-trans-wrapper,
+.theme-light .add-trans-wrapper {
+  --a-bg: #F4F5F7;
+  --a-card: #FFFFFF;
+  --a-border: #DCDFE4;
+  --a-text: #1A1A1A;
+  --a-muted: #666666;
+  --a-input: #FFFFFF;
+  --a-placeholder: #A3A3A3;
+  --a-accent: #1A1A1A;
+  --a-accent-text: #F4F5F7;
+  --a-danger: #C92A2A;
 }
 
 .add-trans-content {
-    padding: 32px 48px;
-    max-width: 640px;
-    margin: 0 auto;
+  padding: 32px 48px;
+  max-width: 640px;
+  margin: 0 auto;
 }
 
 .add-trans-title {
-    font-size: 26px;
-    font-weight: 700;
-    color: #1A1A1A;
-    letter-spacing: -0.5px;
-    margin: 0 0 6px 0;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin: 0 0 6px 0;
+  animation: a-rise 0.5s ease both;
 }
 
 .add-trans-subtitle {
-    font-size: 14px;
-    color: #666666;
-    margin: 0 0 32px 0;
+  font-size: 14px;
+  color: var(--a-muted);
+  margin: 0 0 32px 0;
+  animation: a-rise 0.5s ease 40ms both;
 }
 
 .add-trans-form {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    padding: 36px;
-    background: #FFFFFF;
-    border: 1px solid #E6E8EC;
-    border-radius: 16px;
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 36px;
+  background: var(--a-card);
+  border: 1px solid var(--a-border);
+  border-radius: 16px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+  animation: a-rise 0.55s ease 100ms both;
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
 
 .add-trans-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
 }
 
 .add-trans-field {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .add-trans-field label {
-    font-size: 11px;
-    font-weight: 700;
-    color: #666666;
-    text-transform: uppercase;
-    letter-spacing: 1.2px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--a-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
 }
+
+.add-trans-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.add-trans-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--a-text);
+  text-decoration: none;
+  opacity: 0.75;
+  transition: opacity 0.2s ease;
+}
+
+.add-trans-link:hover { opacity: 1; text-decoration: underline; }
 
 .add-trans-field input,
 .add-trans-field select {
-    font-family: inherit;
-    font-size: 15px;
-    height: 46px;
-    padding: 0 16px;
-    background: #FFFFFF;
-    border: 1px solid #DCDFE4;
-    border-radius: 10px;
-    color: #1A1A1A;
-    outline: none;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  font-family: inherit;
+  font-size: 15px;
+  height: 46px;
+  padding: 0 16px;
+  background: var(--a-input);
+  border: 1px solid var(--a-border);
+  border-radius: 10px;
+  color: var(--a-text);
+  outline: none;
+  color-scheme: dark;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.add-trans-field input::placeholder {
-    color: #A3A3A3;
+:root[data-theme="light"] .add-trans-field input,
+:root[data-theme="light"] .add-trans-field select,
+body.light .add-trans-field input,
+body.light .add-trans-field select,
+.theme-light .add-trans-field input,
+.theme-light .add-trans-field select {
+  color-scheme: light;
 }
+
+.add-trans-field input::placeholder { color: var(--a-placeholder); }
 
 .add-trans-field input:focus,
 .add-trans-field select:focus {
-    border-color: #1A1A1A;
-    box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.08);
+  border-color: var(--a-accent);
+  box-shadow: 0 0 0 3px rgba(128, 128, 128, 0.15);
 }
 
-.add-trans-field select {
-    cursor: pointer;
-}
+.add-trans-field select { cursor: pointer; }
 
 .add-trans-field select option {
-    background: #FFFFFF;
-    color: #1A1A1A;
+  background: var(--a-card);
+  color: var(--a-text);
+}
+
+.add-trans-check {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 14px;
+  color: var(--a-text);
+  cursor: pointer;
+}
+
+.add-trans-check input { width: 18px; height: 18px; accent-color: var(--a-accent); }
+
+.add-trans-error {
+  color: var(--a-danger);
+  font-size: 14px;
+  margin: 0;
 }
 
 .add-trans-submit {
-    font-family: inherit;
-    font-size: 15px;
-    font-weight: 700;
-    height: 48px;
-    background: #1A1A1A;
-    border: none;
-    border-radius: 10px;
-    color: #E5E5E5;
-    cursor: pointer;
-    transition: background 0.2s ease, transform 0.2s ease;
-    margin-top: 8px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  height: 48px;
+  background: var(--a-accent);
+  border: none;
+  border-radius: 10px;
+  color: var(--a-accent-text);
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  margin-top: 8px;
 }
 
-.add-trans-submit:hover {
-    background: #2B2B2B;
-    transform: translateY(-1px);
-}
+.add-trans-submit:hover { transform: translateY(-1px); opacity: 0.92; }
 
 .add-trans-submit:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@keyframes a-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .add-trans-wrapper * {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 @media (max-width: 768px) {
-    .add-trans-content {
-        padding: 20px;
-    }
-
-    .add-trans-row {
-        grid-template-columns: 1fr;
-    }
-
-    .add-trans-form {
-        padding: 24px;
-    }
+  .add-trans-content { padding: 20px; }
+  .add-trans-row { grid-template-columns: 1fr; }
+  .add-trans-form { padding: 24px; }
 }
