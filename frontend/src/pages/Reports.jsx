@@ -13,15 +13,16 @@ const formatCurrency = (amount) => {
   return `R ${num.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
-const formatDate = (d) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const pad = (n) => String(n).padStart(2, '0');
+
+const formatDate = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
 const getPeriodOptions = () => {
   const today = new Date();
   return Array.from({ length: 6 }, (_, i) => {
     const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
     return {
-      value: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+      value: `${d.getFullYear()}-${pad(d.getMonth() + 1)}`,
       label: i === 0 ? 'This month' : d.toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' }),
       proOnly: i >= FREE_MONTHS,
     };
@@ -71,7 +72,7 @@ const Reports = () => {
   }, []);
 
   useEffect(() => {
-    if (!selectedBusinessId) return;
+    if (!selectedBusinessId) return undefined;
     let ignore = false;
 
     const loadReport = async () => {
@@ -99,7 +100,9 @@ const Reports = () => {
     };
 
     loadReport();
-    return () => { ignore = true; };
+    return () => {
+      ignore = true;
+    };
   }, [selectedBusinessId, period]);
 
   if (businessesLoaded && businesses.length === 0) {
@@ -108,7 +111,7 @@ const Reports = () => {
         <Navbar />
         <main className="rep-container">
           <h1 className="rep-title">Financial Reports</h1>
-          <div className="rep-card">
+          <div className="rep-card rep-empty">
             <p className="rep-msg">You need to set up your business first.</p>
             <button className="rep-primary-btn" onClick={() => navigate('/business-setup')}>
               Set Up Business
@@ -128,19 +131,19 @@ const Reports = () => {
 
   const summaryCards = (
     <div className="rep-grid">
-      <div className="rep-card">
+      <div className="rep-card rep-stat" style={{ animationDelay: '40ms' }}>
         <span>Total Revenue</span>
         <h3 className="rep-pos">{formatCurrency(revenue)}</h3>
       </div>
-      <div className="rep-card">
+      <div className="rep-card rep-stat" style={{ animationDelay: '100ms' }}>
         <span>Total Expenses</span>
         <h3 className="rep-neg">{formatCurrency(expenses)}</h3>
       </div>
-      <div className="rep-card">
+      <div className="rep-card rep-stat" style={{ animationDelay: '160ms' }}>
         <span>Net Profit</span>
         <h3 className={profit >= 0 ? 'rep-pos' : 'rep-neg'}>{formatCurrency(profit)}</h3>
       </div>
-      <div className="rep-card">
+      <div className="rep-card rep-stat" style={{ animationDelay: '220ms' }}>
         <span>Net Profit Margin</span>
         <h3>{margin.toFixed(2)}%</h3>
       </div>
@@ -151,13 +154,19 @@ const Reports = () => {
     <div className="rep-card">
       <h2 className="rep-section-title">Income vs Expenses</h2>
       <div className="rep-bar-item">
-        <div className="rep-bar-labels"><span>Income</span><span>{formatCurrency(revenue)}</span></div>
+        <div className="rep-bar-labels">
+          <span>Income</span>
+          <span>{formatCurrency(revenue)}</span>
+        </div>
         <div className="rep-bar-track">
           <div className="rep-bar-fill rep-fill-pos" style={{ width: `${(revenue / maxBar) * 100}%` }} />
         </div>
       </div>
       <div className="rep-bar-item">
-        <div className="rep-bar-labels"><span>Expenses</span><span>{formatCurrency(expenses)}</span></div>
+        <div className="rep-bar-labels">
+          <span>Expenses</span>
+          <span>{formatCurrency(expenses)}</span>
+        </div>
         <div className="rep-bar-track">
           <div className="rep-bar-fill rep-fill-neg" style={{ width: `${(expenses / maxBar) * 100}%` }} />
         </div>
@@ -165,40 +174,57 @@ const Reports = () => {
     </div>
   );
 
+  const renderBreakdownRow = ([category, raw]) => {
+    const amount = Number(raw) || 0;
+    const pct = expenses > 0 ? (amount / expenses) * 100 : 0;
+    return (
+      <div className="rep-bar-item" key={category}>
+        <div className="rep-bar-labels">
+          <span>{category}</span>
+          <span>{formatCurrency(amount)} ({pct.toFixed(1)}%)</span>
+        </div>
+        <div className="rep-bar-track">
+          <div className="rep-bar-fill" style={{ width: `${Math.min(100, pct)}%` }} />
+        </div>
+      </div>
+    );
+  };
+
   const expenseBreakdown = (
     <div className="rep-card">
       <h2 className="rep-section-title">Expense Breakdown</h2>
-      {breakdown.length > 0 ? (
-        breakdown.map(([category, raw]) => {
-          const amount = Number(raw) || 0;
-          const pct = expenses > 0 ? (amount / expenses) * 100 : 0;
-          return (
-            <div className="rep-bar-item" key={category}>
-              <div className="rep-bar-labels">
-                <span>{category}</span>
-                <span>{formatCurrency(amount)} ({pct.toFixed(1)}%)</span>
-              </div>
-              <div className="rep-bar-track">
-                <div className="rep-bar-fill" style={{ width: `${Math.min(100, pct)}%` }} />
-              </div>
-            </div>
-          );
-        })
-      ) : (
-        <p className="rep-msg">No expenses in this period.</p>
-      )}
+      {breakdown.length > 0 ? breakdown.map(renderBreakdownRow) : <p className="rep-msg">No expenses in this period.</p>}
     </div>
   );
 
   const fullReport = (
-    <>
+    <div key={`${selectedBusinessId}-${period}`}>
       {summaryCards}
       <div className="rep-lower">
         <ProLock feature="Income vs Expenses">{incomeVsExpenses}</ProLock>
         {expenseBreakdown}
       </div>
-    </>
+    </div>
   );
+
+  let body;
+  if (loading) {
+    body = (
+      <div className="rep-skeleton">
+        <div className="rep-skeleton-grid">
+          <span />
+          <span />
+          <span />
+          <span />
+        </div>
+        <span className="rep-skeleton-big" />
+      </div>
+    );
+  } else if (periodLocked) {
+    body = <ProLock feature="History older than 3 months">{fullReport}</ProLock>;
+  } else {
+    body = fullReport;
+  }
 
   return (
     <div className="rep-layout">
@@ -215,13 +241,14 @@ const Reports = () => {
                 className="rep-select"
                 value={selectedBusinessId || ''}
                 onChange={(e) => setSelectedBusinessId(Number(e.target.value))}
+                aria-label="Choose business"
               >
                 {businesses.map((b) => (
                   <option key={b.id} value={b.id}>{b.name}</option>
                 ))}
               </select>
             )}
-            <select className="rep-select" value={period} onChange={(e) => setPeriod(e.target.value)}>
+            <select className="rep-select" value={period} onChange={(e) => setPeriod(e.target.value)} aria-label="Choose period">
               {periodOptions.map((p) => (
                 <option key={p.value} value={p.value}>
                   {p.label}{!isPro && p.proOnly ? ' (Pro)' : ''}
@@ -231,13 +258,7 @@ const Reports = () => {
           </div>
         </div>
 
-        {loading ? (
-          <p className="rep-msg">Generating report...</p>
-        ) : periodLocked ? (
-          <ProLock feature="History older than 3 months">{fullReport}</ProLock>
-        ) : (
-          fullReport
-        )}
+        {body}
       </main>
     </div>
   );
