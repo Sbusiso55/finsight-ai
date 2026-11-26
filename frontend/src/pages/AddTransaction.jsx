@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import api from '../api/axiosConfig';
 import './AddTransaction.css';
@@ -8,6 +8,7 @@ const AddTransaction = () => {
   const navigate = useNavigate();
   const [businessId, setBusinessId] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
     description: '',
     amount: '',
@@ -33,6 +34,8 @@ const AddTransaction = () => {
         setCategories(Array.isArray(catRes.data) ? catRes.data : []);
       } catch (err) {
         setError('Could not load your business details');
+      } finally {
+        setLoading(false);
       }
     };
     load();
@@ -90,20 +93,20 @@ const AddTransaction = () => {
 
         <form className="add-trans-form" onSubmit={handleSubmit}>
           <div className="add-trans-field">
-            <label>Description</label>
-            <input name="description" type="text" placeholder="What was this for?"
+            <label htmlFor="description">Description</label>
+            <input id="description" name="description" type="text" placeholder="What was this for?"
               value={form.description} onChange={handleChange} required />
           </div>
 
           <div className="add-trans-row">
             <div className="add-trans-field">
-              <label>Amount (R)</label>
-              <input name="amount" type="number" min="0.01" step="0.01" placeholder="0.00"
+              <label htmlFor="amount">Amount (R)</label>
+              <input id="amount" name="amount" type="number" min="0.01" step="0.01" placeholder="0.00"
                 value={form.amount} onChange={handleChange} required />
             </div>
             <div className="add-trans-field">
-              <label>Type</label>
-              <select name="type" value={form.type} onChange={handleChange}>
+              <label htmlFor="type">Type</label>
+              <select id="type" name="type" value={form.type} onChange={handleChange}>
                 <option value="INCOME">Income</option>
                 <option value="EXPENSE">Expense</option>
               </select>
@@ -112,22 +115,28 @@ const AddTransaction = () => {
 
           <div className="add-trans-row">
             <div className="add-trans-field">
-              <label>Category</label>
-              <select name="categoryId" value={form.categoryId} onChange={handleChange} required>
-                <option value="">{visibleCategories.length ? 'Select category' : 'No categories yet'}</option>
+              <div className="add-trans-label-row">
+                <label htmlFor="categoryId">Category</label>
+                <Link to="/settings#categories" className="add-trans-link">+ New category</Link>
+              </div>
+              <select id="categoryId" name="categoryId" value={form.categoryId} onChange={handleChange}
+                required disabled={loading}>
+                <option value="">
+                  {loading ? 'Loading...' : visibleCategories.length ? 'Select category' : 'No categories yet'}
+                </option>
                 {visibleCategories.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
             </div>
             <div className="add-trans-field">
-              <label>Date</label>
-              <input name="transactionDate" type="date"
+              <label htmlFor="transactionDate">Date</label>
+              <input id="transactionDate" name="transactionDate" type="date"
                 value={form.transactionDate} onChange={handleChange} required />
             </div>
           </div>
 
-          {error && <p style={{ color: '#C92A2A', fontSize: 14, margin: 0 }}>{error}</p>}
+          {error && <p className="add-trans-error">{error}</p>}
 
           <button type="submit" className="add-trans-submit" disabled={saving || !businessId}>
             {saving ? 'Saving...' : 'Save Transaction'}

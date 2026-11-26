@@ -48,15 +48,15 @@ const BusinessSetup = () => {
 
         <form className="add-trans-form" onSubmit={handleSubmit}>
           <div className="add-trans-field">
-            <label>Business Name</label>
-            <input name="name" type="text" placeholder="e.g. Kev's Spaza Shop"
+            <label htmlFor="name">Business Name</label>
+            <input id="name" name="name" type="text" placeholder="e.g. Kev's Spaza Shop"
               value={form.name} onChange={handleChange} required />
           </div>
 
           <div className="add-trans-row">
             <div className="add-trans-field">
-              <label>Industry</label>
-              <select name="industry" value={form.industry} onChange={handleChange} required>
+              <label htmlFor="industry">Industry</label>
+              <select id="industry" name="industry" value={form.industry} onChange={handleChange} required>
                 <option value="">Select industry</option>
                 <option value="Retail">Retail</option>
                 <option value="Food & Beverage">Food & Beverage</option>
@@ -67,8 +67,8 @@ const BusinessSetup = () => {
               </select>
             </div>
             <div className="add-trans-field">
-              <label>Currency</label>
-              <select name="currency" value={form.currency} onChange={handleChange}>
+              <label htmlFor="currency">Currency</label>
+              <select id="currency" name="currency" value={form.currency} onChange={handleChange}>
                 <option value="ZAR">ZAR (R)</option>
               </select>
             </div>
@@ -76,23 +76,23 @@ const BusinessSetup = () => {
 
           <div className="add-trans-row">
             <div className="add-trans-field">
-              <label>Opening Balance (R)</label>
-              <input name="openingBalance" type="number" min="0" step="0.01" placeholder="0.00"
+              <label htmlFor="openingBalance">Opening Balance (R)</label>
+              <input id="openingBalance" name="openingBalance" type="number" min="0" step="0.01" placeholder="0.00"
                 value={form.openingBalance} onChange={handleChange} />
             </div>
             <div className="add-trans-field">
-              <label>Balance Date</label>
-              <input name="openingBalanceDate" type="date"
+              <label htmlFor="openingBalanceDate">Balance Date</label>
+              <input id="openingBalanceDate" name="openingBalanceDate" type="date"
                 value={form.openingBalanceDate} onChange={handleChange} required />
             </div>
           </div>
 
-          <label style={{ display: 'flex', gap: 10, alignItems: 'center', fontSize: 14, color: '#1A1A1A' }}>
+          <label className="add-trans-check">
             <input name="seasonal" type="checkbox" checked={form.seasonal} onChange={handleChange} />
             My business is seasonal (busier at certain times of year)
           </label>
 
-          {error && <p style={{ color: '#C92A2A', fontSize: 14, margin: 0 }}>{error}</p>}
+          {error && <p className="add-trans-error">{error}</p>}
 
           <button type="submit" className="add-trans-submit" disabled={saving}>
             {saving ? 'Creating...' : 'Create Business'}
