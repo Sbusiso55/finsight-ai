@@ -87,7 +87,8 @@ const Signup = () => {
           Already have an account? <Link to="/login">Sign In</Link>
         </div>
         <div className="auth-footer-text" style={{ marginTop: 0 }}>
-          By signing up you agree to our <Link to="/privacy">Privacy Policy</Link>.
+          By signing up you agree to our <Link to="/terms">Terms of Service</Link> and{' '}
+          <Link to="/privacy">Privacy Policy</Link>.
         </div>
       </Reveal>
     </div>

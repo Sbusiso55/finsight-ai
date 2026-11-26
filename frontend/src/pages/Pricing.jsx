@@ -166,6 +166,10 @@ const Pricing = () => {
             </button>
           </Magnetic>
           {notice && <p className="pr-notice">{notice}</p>}
+          <p className="pr-notice">
+            By choosing a plan you agree to our{' '}
+            <span style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={() => navigate('/terms')}>Terms of Service</span>.
+          </p>
         </Reveal>
       </section>
 
@@ -198,6 +202,7 @@ const Pricing = () => {
           <span onClick={() => navigate('/help')}>Help & FAQ</span>
           <span onClick={() => navigate('/contact')}>Contact</span>
           <span onClick={() => navigate('/privacy')}>Privacy</span>
+          <span onClick={() => navigate('/terms')}>Terms</span>
         </div>
         <div>Johannesburg &bull; Gauteng &bull; South Africa</div>
       </footer>
