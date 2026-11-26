@@ -201,6 +201,7 @@ const LandingPage = () => {
             <span onClick={() => navigate('/help')}>Help & FAQ</span>
             <span onClick={() => navigate('/contact')}>Contact</span>
             <span onClick={() => navigate('/privacy')}>Privacy</span>
+            <span onClick={() => navigate('/terms')}>Terms</span>
             <a href="mailto:support.clearsidepay@gmail.com">support.clearsidepay@gmail.com</a>
           </div>
           <div>Johannesburg &bull; Gauteng &bull; South Africa</div>

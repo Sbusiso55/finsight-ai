@@ -54,6 +54,7 @@ const About = () => {
         <div onClick={() => navigate('/')} style={{ cursor: 'pointer' }}><Logo /></div>
         <ul className="landing-nav-links">
           <li onClick={() => navigate('/')}>Home</li>
+          <li onClick={() => navigate('/pricing')}>Pricing</li>
           <li onClick={() => navigate('/help')}>Help & FAQ</li>
           <li onClick={() => navigate('/contact')}>Contact</li>
         </ul>
@@ -184,9 +185,11 @@ const About = () => {
       <footer className="landing-footer">
         <div>&copy; 2026 Clearside Pay. All rights reserved.</div>
         <div className="landing-footer-links">
+          <span onClick={() => navigate('/pricing')}>Pricing</span>
           <span onClick={() => navigate('/help')}>Help & FAQ</span>
           <span onClick={() => navigate('/contact')}>Contact</span>
           <span onClick={() => navigate('/privacy')}>Privacy</span>
+          <span onClick={() => navigate('/terms')}>Terms</span>
           <a href="mailto:support.clearsidepay@gmail.com">support.clearsidepay@gmail.com</a>
         </div>
         <div>Johannesburg &bull; Gauteng &bull; South Africa</div>
