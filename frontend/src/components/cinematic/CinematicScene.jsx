@@ -35,6 +35,61 @@ function makeTexture(w, h, draw) {
   return tex;
 }
 
+function drawCardFront(c, w, h) {
+  const g = c.createLinearGradient(0, 0, w, h);
+  g.addColorStop(0, '#2A2A2D');
+  g.addColorStop(0.5, '#18181A');
+  g.addColorStop(1, '#0E0E10');
+  c.fillStyle = g;
+  c.fillRect(0, 0, w, h);
+  for (let y = 0; y < h; y += 2) {
+    c.fillStyle = `rgba(255,255,255,${Math.random() * 0.025})`;
+    c.fillRect(0, y, w, 1);
+  }
+  const shine = c.createLinearGradient(0, 0, w, 0);
+  shine.addColorStop(0, 'rgba(255,255,255,0)');
+  shine.addColorStop(0.5, 'rgba(255,255,255,0.05)');
+  shine.addColorStop(1, 'rgba(255,255,255,0)');
+  c.fillStyle = shine;
+  c.fillRect(0, 0, w, h);
+
+  c.fillStyle = '#E5E5E5';
+  c.font = `700 46px ${FONT}`;
+  c.fillText('CLEARSIDE', 72, 110);
+  c.fillStyle = '#9A9A9A';
+  c.font = `500 46px ${FONT}`;
+  c.fillText('PAY', 352, 110);
+
+  c.strokeStyle = 'rgba(229,229,229,0.55)';
+  c.lineWidth = 5;
+  for (let i = 1; i <= 3; i++) {
+    c.beginPath();
+    c.arc(w - 110, 300, i * 20, -0.8, 0.8);
+    c.stroke();
+  }
+
+  c.fillStyle = 'rgba(229,229,229,0.75)';
+  c.font = `500 36px "Courier New", monospace`;
+  c.fillText('••••  ••••  ••••  2026', 72, 470);
+  c.font = `600 24px ${FONT}`;
+  c.fillStyle = 'rgba(229,229,229,0.5)';
+  c.fillText('BUSINESS', 72, 560);
+  c.fillText('PLATINUM', w - 210, 560);
+}
+
+function drawCardBack(c, w, h) {
+  const g = c.createLinearGradient(0, 0, w, h);
+  g.addColorStop(0, '#222224');
+  g.addColorStop(1, '#0E0E10');
+  c.fillStyle = g;
+  c.fillRect(0, 0, w, h);
+  c.fillStyle = '#050505';
+  c.fillRect(0, 70, w, 110);
+  c.fillStyle = 'rgba(229,229,229,0.45)';
+  c.font = `500 26px ${FONT}`;
+  c.fillText('Financial clarity, engineered.', 72, 520);
+}
+
 function drawPhone(c, w, h, k) {
   c.fillStyle = '#0F0F10';
   c.fillRect(0, 0, w, h);
@@ -244,39 +299,39 @@ function Floor({ lite, color }) {
   );
 }
 
-export function Logo3D() {
+/** Graphite metal card with platinum lettering. Sits to the side, angled toward the centre. */
+export function BrandCard({ position = [1.8, 0.25, 0], scale = 0.62, baseYaw = -0.5 }) {
   const g = useRef();
-  const hex = useMemo(() => {
-    const shape = new THREE.Shape();
-    const hole = new THREE.Path();
-    for (let i = 0; i < 6; i++) {
-      const a = Math.PI / 6 + (i * Math.PI) / 3;
-      const pts = [Math.cos(a) * 1.2, Math.sin(a) * 1.2, Math.cos(a) * 1.0, Math.sin(a) * 1.0];
-      if (i === 0) { shape.moveTo(pts[0], pts[1]); hole.moveTo(pts[2], pts[3]); }
-      else { shape.lineTo(pts[0], pts[1]); hole.lineTo(pts[2], pts[3]); }
-    }
-    shape.closePath();
-    hole.closePath();
-    shape.holes.push(hole);
-    return new THREE.ExtrudeGeometry(shape, {
-      depth: 0.25, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.03, bevelSegments: 4,
-    });
-  }, []);
-  useEffect(() => () => hex.dispose(), [hex]);
+  const front = useMemo(() => makeTexture(1024, 640, drawCardFront), []);
+  const back = useMemo(() => makeTexture(1024, 640, drawCardBack), []);
+  useEffect(() => () => { front.dispose(); back.dispose(); }, [front, back]);
+
   useFrame((state) => {
     const t = state.clock.elapsedTime;
-    g.current.rotation.y = Math.sin(t * 0.25) * 0.35 + (1 - ease(clamp01(t / 3))) * 0.8;
+    const intro = ease(clamp01(t / 2.5));
+    g.current.rotation.y = baseYaw + Math.sin(t * 0.3) * 0.18 + (1 - intro) * 0.9;
+    g.current.rotation.x = -0.18 + Math.sin(t * 0.4) * 0.03;
+    g.current.position.y = position[1] + Math.sin(t * 0.8) * 0.04;
   });
-  const metal = { color: '#E8E8E8', metalness: 1, roughness: 0.12, clearcoat: 1, clearcoatRoughness: 0.05 };
+
+  const W = 3.2;
+  const H = 2.0;
   return (
-    <group ref={g} position={[0, 0.05, 0]}>
-      <mesh geometry={hex} position={[0, 0, -0.125]}>
-        <meshPhysicalMaterial {...metal} />
+    <group ref={g} position={position} scale={scale} rotation-z={0.08}>
+      <RoundedBox args={[W, H, 0.04]} radius={0.12} smoothness={6}>
+        <meshPhysicalMaterial color="#1A1A1C" metalness={1} roughness={0.35} clearcoat={1} clearcoatRoughness={0.12} />
+      </RoundedBox>
+      <mesh position={[0, 0, 0.021]}>
+        <planeGeometry args={[W - 0.06, H - 0.06]} />
+        <meshPhysicalMaterial map={front} metalness={0.6} roughness={0.4} clearcoat={1} clearcoatRoughness={0.08} />
       </mesh>
-      <mesh rotation={[0, 0, Math.PI / 4]}>
-        <torusGeometry args={[0.5, 0.09, 32, 96, Math.PI * 1.5]} />
-        <meshPhysicalMaterial {...metal} />
+      <mesh position={[0, 0, -0.021]} rotation-y={Math.PI}>
+        <planeGeometry args={[W - 0.06, H - 0.06]} />
+        <meshPhysicalMaterial map={back} metalness={0.6} roughness={0.4} clearcoat={1} clearcoatRoughness={0.08} />
       </mesh>
+      <RoundedBox args={[0.42, 0.32, 0.012]} radius={0.04} smoothness={3} position={[-0.95, 0.05, 0.03]}>
+        <meshStandardMaterial color="#C8C8C8" metalness={1} roughness={0.22} />
+      </RoundedBox>
     </group>
   );
 }
@@ -532,12 +587,11 @@ export default function CinematicScene({ progress, active, lite, onReady, theme 
       <Reveal />
       <CameraRig progress={progress} />
       <Floor lite={lite} color={light ? '#D9D9D6' : '#141414'} />
-      <Logo3D />
       <Mess progress={progress} lite={lite} />
       <Phone progress={progress} />
       <CardMachine progress={progress} />
       <Scanner progress={progress} />
-      {!lite && [0, 8.6, 16, 24.3].map((x) => (
+      {!lite && [8.6, 16, 24.3].map((x) => (
         <ContactShadows key={x} position={[x, FLOOR_Y + 0.005, 0]} scale={5} blur={2.5} opacity={light ? 0.35 : 0.6} far={2.5} resolution={512} />
       ))}
       {!lite && (
