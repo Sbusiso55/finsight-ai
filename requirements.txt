@@ -1,8 +1,9 @@
 
-
 uvicorn
 python-dotenv
-fastapi
-google-genai
-pydantic
-
+fastapi==0.151.0
+google-genai==2.31.0
+pydantic==2.14.1
+slowapi==0.1.10
+python-multipart==0.0.34
+tzdata==2026.6

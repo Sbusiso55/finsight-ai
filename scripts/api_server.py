@@ -2,10 +2,18 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
+from typing import Optional
 import logging
 import time
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import (
+    FastAPI,
+    HTTPException,
+    Request,
+    UploadFile,
+    File,
+    Form,
+)
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -21,6 +29,9 @@ from scripts.openai_integration import (
     build_financial_summary,
     ask_financial_question,
 )
+from scripts.fraud_detection import detect_payment_fraud
+from scripts.stock_forecasting import calculate_stock_forecast
+from scripts.pos_import import import_pos_csv
 app = FastAPI(
     title="FinSight AI API",
     description="API for financial analysis, forecasting, and AI-powered financial insights.",
@@ -161,6 +172,64 @@ class AskAIRequest(BaseModel):
     question: str
     financial_data: dict
 
+
+class PosTransactionRequest(BaseModel):
+    id: int
+    businessId: int
+    provider: str
+    providerTransactionId: str
+    amount: float = Field(gt=0)
+    paymentMethod: str
+    status: str
+    createdAt: str
+
+
+class FraudDetectionRequest(BaseModel):
+    transactions: list[PosTransactionRequest]
+
+    @field_validator("transactions")
+    @classmethod
+    def validate_transactions(cls, values):
+        if not values:
+            raise ValueError("At least one transaction is required.")
+        return values
+
+
+class ProductRequest(BaseModel):
+    id: int
+    businessId: int
+    name: str
+    barcode: Optional[str] = None
+    qrCode: Optional[str] = None
+    quantity: int = Field(ge=0)
+    minStockLevel: int = Field(ge=0)
+    unitPrice: float = Field(ge=0)
+    supplierId: Optional[int] = None
+
+
+class StockMovementRequest(BaseModel):
+    id: int
+    productId: int
+    quantity: int = Field(gt=0)
+    type: str
+    scannedBy: int
+    scannedAt: str
+
+    @field_validator("type")
+    @classmethod
+    def validate_movement_type(cls, value):
+        if value not in ("IN", "OUT"):
+            raise ValueError("Movement type must be IN or OUT.")
+        return value
+
+
+class StockForecastRequest(BaseModel):
+    product: ProductRequest
+    stockMovements: list[StockMovementRequest]
+    supplierLeadTimeDays: int = Field(default=0, ge=0)
+
+
+
 # Forecast Endpoint
 @app.post(
     "/api/forecast",
@@ -178,7 +247,6 @@ class AskAIRequest(BaseModel):
         500: {"description": "An internal error occurred while generating the forecast."},
     },
 )
-@limiter.limit("10/minute")
 def forecast(request: Request, data: ForecastRequest):
     try:
         forecast_value = forecast_next_month(
@@ -249,7 +317,6 @@ def financial_analysis(request: Request, data: FinancialAnalysisRequest):
         500: {"description": "An internal error occurred while generating the summary."},
     },
 )
-@limiter.limit("10/minute")
 def financial_summary(request: Request, data: FinancialSummaryRequest):
     try:
         revenue_transactions = [
@@ -294,7 +361,6 @@ def financial_summary(request: Request, data: FinancialSummaryRequest):
         500: {"description": "An internal error occurred while generating the answer."},
     },
 )
-@limiter.limit("5/minute")
 def ask_ai(request: Request, data: AskAIRequest):
     try:
         answer = ask_financial_question(
@@ -323,3 +389,172 @@ def ask_ai(request: Request, data: AskAIRequest):
             status_code=500,
             detail=str(error),
         )
+
+# Fraud Detection Endpoint
+@app.post(
+    "/api/fraud-detection",
+    summary="Detect suspicious payment activity",
+    description=(
+        "Analyses POS transactions for unusually large payments, "
+        "rapid payment bursts and unusual payment hours."
+    ),
+    response_description="Suspicious transactions and risk indicators.",
+    responses={
+        200: {"description": "Fraud analysis completed successfully."},
+        400: {"description": "Invalid transaction data."},
+        422: {"description": "Invalid request fields."},
+        429: {"description": "Rate limit exceeded."},
+        500: {"description": "An internal error occurred."},
+    }
+)
+def fraud_detection(request: Request, data: FraudDetectionRequest):
+    try:
+        transactions = [
+            transaction.model_dump()
+            for transaction in data.transactions
+        ]
+
+        result = detect_payment_fraud(transactions)
+
+        logger.info(
+            "Fraud detection completed: transactions=%s suspicious=%s",
+            result["totalTransactions"],
+            result["suspiciousCount"],
+        )
+
+        return result
+
+    except ValueError as error:
+        logger.exception("Fraud detection validation error: %s", str(error))
+        raise HTTPException(status_code=400, detail=str(error))
+
+    except Exception as error:
+        logger.exception("Error in /api/fraud-detection: %s", str(error))
+        raise HTTPException(
+            status_code=500,
+            detail="An error occurred during fraud detection.",
+        )
+
+# Stock Forecasting Endpoint
+@app.post(
+    "/api/stock-forecast",
+    summary="Forecast stock levels and reorder dates",
+    description=(
+        "Predicts when a product may run out of stock and "
+        "recommends when the owner should reorder."
+    ),
+    response_description="Stock forecast and reorder recommendation.",
+    responses={
+        200: {"description": "Stock forecast generated successfully."},
+        400: {"description": "Invalid stock data."},
+        422: {"description": "Invalid request fields."},
+        429: {"description": "Rate limit exceeded."},
+        500: {"description": "An internal error occurred."},
+    },
+)
+def stock_forecast(request: Request, data: StockForecastRequest):
+    try:
+        product = data.product.model_dump()
+
+        stock_movements = [
+            movement.model_dump()
+            for movement in data.stockMovements
+        ]
+
+        result = calculate_stock_forecast(
+            product,
+            stock_movements,
+            data.supplierLeadTimeDays,
+        )
+
+        logger.info(
+            "Stock forecast completed: productId=%s reorderRecommended=%s",
+            result["productId"],
+            result["reorderRecommended"],
+        )
+
+        return result
+
+    except ValueError as error:
+        logger.exception("Stock forecasting validation error: %s", str(error))
+        raise HTTPException(status_code=400, detail=str(error))
+
+    except Exception as error:
+        logger.exception("Error in /api/stock-forecast: %s", str(error))
+        raise HTTPException(
+            status_code=500,
+            detail="An error occurred during stock forecasting.",
+        )
+
+# POS CSV Import Endpoint
+@app.post(
+    "/api/pos/import-csv",
+    summary="Import POS transactions from CSV",
+    description=(
+        "Reads and validates transaction exports from "
+        "Yoco, SnapScan and Zapper."
+    ),
+    responses={
+        200: {"description": "CSV processed successfully."},
+        400: {"description": "Invalid CSV file or data."},
+        422: {"description": "Invalid request fields."},
+        429: {"description": "Rate limit exceeded."},
+        500: {"description": "An internal error occurred."},
+    },
+)
+async def import_pos_transactions(
+    request: Request,
+    provider: str = Form(...),
+    businessId: int = Form(...),
+    file: UploadFile = File(...),
+):
+    try:
+        if not file.filename or not file.filename.lower().endswith(".csv"):
+            raise HTTPException(
+                status_code=400,
+                detail="Please upload a CSV file.",
+            )
+
+        content = await file.read(5 * 1024 * 1024 + 1)
+
+        if len(content) > 5 * 1024 * 1024:
+            raise HTTPException(
+                status_code=400,
+                detail="CSV file cannot exceed 5 MB.",
+            )
+
+        result = import_pos_csv(content, provider, businessId)
+
+        logger.info(
+            "POS CSV import completed: provider=%s businessId=%s imported=%s invalid=%s",
+            provider,
+            businessId,
+            result["importedCount"],
+            result["invalidCount"],
+        )
+
+        return result
+
+    except HTTPException:
+        raise
+
+    except UnicodeDecodeError:
+        logger.exception("POS CSV encoding error.")
+        raise HTTPException(
+            status_code=400,
+            detail="CSV file must use UTF-8 encoding.",
+        )
+
+    except ValueError as error:
+        logger.exception("POS CSV import validation error: %s", str(error))
+        raise HTTPException(status_code=400, detail=str(error))
+
+    except Exception as error:
+        logger.exception("Error in POS CSV import: %s", str(error))
+        raise HTTPException(
+            status_code=500,
+            detail="An error occurred during CSV import.",
+        )
+
+    finally:
+        await file.close()
